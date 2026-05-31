@@ -552,6 +552,29 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .exam-hist-row{position:relative;padding-right:30px!important}
 .exam-hist-del{position:absolute;right:3px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:17px;line-height:1;cursor:pointer;font-family:inherit;padding:3px 7px;border-radius:7px}
 .exam-hist-del:hover{color:var(--wrong);background:var(--wrong-bg)}
+/* 해설 박스 인라인 편집(내 해설) */
+.explanation-box h3{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.expl-edit-btn{background:var(--accent-soft);border:1px solid var(--border2);color:var(--accent-deep);border-radius:9px;min-width:32px;height:28px;font-size:14px;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all .15s}
+.expl-edit-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.expl-none{font-size:13px;color:var(--text2);padding:2px 0}
+.uexpl-mine{margin-top:11px;display:flex;flex-direction:column;gap:8px}
+.uexpl-item{background:var(--accent-soft);border:1px solid var(--border2);border-left:3px solid var(--accent);border-radius:11px;padding:11px 14px}
+.uexpl-badge{font-size:10.5px;font-weight:800;color:var(--accent-deep);margin-bottom:5px}
+.uexpl-item .uexpl-text{font-size:13.8px;line-height:1.65;color:var(--body-text);white-space:pre-wrap}
+.uexpl-item .uexpl-img{display:block;max-width:100%;margin-top:8px;border-radius:9px;box-shadow:var(--shadow-sm);cursor:zoom-in;border:1px solid var(--border)}
+.uexpl-actions-row{display:flex;gap:7px;margin-top:9px}
+.uexpl-mini{padding:5px 12px;border:1px solid var(--border2);background:#fff;color:var(--text2);border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.uexpl-mini:hover{border-color:var(--accent);color:var(--accent)}
+.uexpl-mini.del:hover{border-color:var(--wrong);color:var(--wrong)}
+.uexpl-editor{margin-top:11px;background:#fff;border:1px dashed var(--accent);border-radius:11px;padding:12px 14px}
+.uexpl-editor-title{font-size:12.5px;font-weight:800;color:var(--accent-deep);margin-bottom:8px}
+.uexpl-editor .uexpl-input{width:100%;padding:10px 13px;border:1px solid var(--border2);border-radius:10px;font-size:13.5px;font-family:inherit;resize:vertical;outline:none;min-height:62px;line-height:1.6;background:#fff;color:var(--body-text)}
+.uexpl-editor .uexpl-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.uexpl-editor .uexpl-actions{display:flex;gap:8px;margin-top:9px;align-items:center}
+.uexpl-save{padding:9px 18px;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.uexpl-save:hover{filter:brightness(1.07)}
+.uexpl-cancel{padding:9px 15px;border:1px solid var(--border2);background:#fff;color:var(--text2);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.uexpl-cancel:hover{border-color:var(--wrong);color:var(--wrong)}
 /* 내 해설(보충) */
 .uexpl-box{margin-top:12px;background:linear-gradient(135deg,var(--accent-soft),rgba(36,67,58,.02));border:1px solid var(--border2);border-radius:13px;padding:14px 16px}
 .uexpl-head{font-size:13.5px;font-weight:800;color:var(--accent-deep);display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:10px}
@@ -580,9 +603,9 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
     <div class="login-sub">로그인하면 풀이·오답·메모가<br>모든 기기(PC·핸드폰)에서 동기화됩니다</div>
     <label>아이디</label><input type="text" id="loginId" placeholder="아이디 입력" autocomplete="username">
     <label>비밀번호</label><input type="password" id="loginPw" placeholder="비밀번호 입력 (6자 이상)" autocomplete="current-password">
-    <button class="login-btn" id="loginBtn" onclick="doLogin()">로그인 / 가입</button>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">로그인</button>
     <div class="login-error" id="loginError"></div>
-    <div class="login-hint">처음 입력한 아이디·비밀번호로 자동 가입됩니다.<br>같은 정보로 다른 기기에서 로그인하면 기록이 이어집니다.</div>
+    <div class="login-hint">josm0106 계정으로만 로그인할 수 있습니다 (신규 가입 불가).<br>같은 계정으로 다른 기기에서 로그인하면 기록이 이어집니다.</div>
   </div>
 </div>
 <div class="sync-indicator" id="syncIndicator"></div>
@@ -642,7 +665,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260531-1958';
+const APP_VERSION='20260531-2035';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -672,25 +695,23 @@ let currentUser=null,firestoreReady=false,syncDebounceTimer=null;
 const PREFIX='jeonmuni2026',EMAIL_DOMAIN='orthoboard.app';
 function showSync(s,m){const e=document.getElementById('syncIndicator');e.className='sync-indicator '+s;e.textContent=m||'';if(s==='synced')setTimeout(()=>{e.className='sync-indicator';},1500);}
 
+const ALLOWED_ID='josm0106';   /* 이 계정만 로그인 허용, 신규 가입 불가 */
 function doLogin(){
   const i=document.getElementById('loginId').value.trim(),p=document.getElementById('loginPw').value,e=document.getElementById('loginError'),b=document.getElementById('loginBtn');
   e.textContent='';if(!i||!p){e.textContent='아이디와 비밀번호를 입력하세요';return;}
-  const em=i.includes('@')?i:i+'@'+EMAIL_DOMAIN;b.disabled=true;b.textContent='로그인 중...';
-  const loginTimeout=setTimeout(()=>{e.textContent='서버 응답 없음. 네트워크를 확인하세요.';b.disabled=false;b.textContent='로그인 / 가입';},15000);
+  const idNorm=i.replace(/@.*$/,'').trim().toLowerCase();
+  if(idNorm!==ALLOWED_ID){e.textContent='허용된 계정('+ALLOWED_ID+')만 로그인할 수 있습니다.';return;}
+  const em=ALLOWED_ID+'@'+EMAIL_DOMAIN;b.disabled=true;b.textContent='로그인 중...';
+  const loginTimeout=setTimeout(()=>{e.textContent='서버 응답 없음. 네트워크를 확인하세요.';b.disabled=false;b.textContent='로그인';},15000);
+  /* 가입(createUser) 없음 — 기존 계정 로그인만 */
   auth.signInWithEmailAndPassword(em,p).then(()=>{clearTimeout(loginTimeout);}).catch(err=>{
-    if(err.code==='auth/user-not-found'||err.code==='auth/invalid-credential'){
-      auth.createUserWithEmailAndPassword(em,p).then(()=>{clearTimeout(loginTimeout);}).catch(e2=>{
-        clearTimeout(loginTimeout);let m='로그인 실패';
-        if(e2.code==='auth/weak-password')m='비밀번호 6자 이상 입력하세요';
-        else if(e2.code==='auth/email-already-in-use')m='비밀번호가 틀렸습니다';
-        else if(e2.code==='auth/network-request-failed')m='네트워크 오류 — 인터넷 연결을 확인하세요';
-        else m=e2.message;e.textContent=m;b.disabled=false;b.textContent='로그인 / 가입';});
-    }else{
-      clearTimeout(loginTimeout);let m=err.message;
-      if(err.code==='auth/wrong-password')m='비밀번호가 틀렸습니다';
-      else if(err.code==='auth/network-request-failed')m='네트워크 오류 — 인터넷 연결을 확인하세요';
-      else if(err.code==='auth/too-many-requests')m='로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요';
-      e.textContent=m;b.disabled=false;b.textContent='로그인 / 가입';}
+    clearTimeout(loginTimeout);let m='로그인 실패';
+    if(err.code==='auth/wrong-password'||err.code==='auth/invalid-credential')m='비밀번호가 틀렸습니다';
+    else if(err.code==='auth/user-not-found')m='계정을 찾을 수 없습니다 (가입은 불가합니다)';
+    else if(err.code==='auth/network-request-failed')m='네트워크 오류 — 인터넷 연결을 확인하세요';
+    else if(err.code==='auth/too-many-requests')m='로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요';
+    else m=err.message;
+    e.textContent=m;b.disabled=false;b.textContent='로그인';
   });
 }
 document.addEventListener('DOMContentLoaded',()=>{
@@ -723,7 +744,7 @@ auth.onAuthStateChanged(u=>{
     currentUser=null;firestoreReady=false;
     document.getElementById('loginOverlay').style.display='flex';
     document.getElementById('userBar').style.display='none';
-    document.getElementById('loginBtn').disabled=false;document.getElementById('loginBtn').textContent='로그인 / 가입';
+    document.getElementById('loginBtn').disabled=false;document.getElementById('loginBtn').textContent='로그인';
   }
 });
 function _mergeArrById(a,b){const seen=new Set();const out=[];for(const it of [...(a||[]),...(b||[])]){if(!it||it.id==null)continue;if(seen.has(it.id))continue;seen.add(it.id);out.push(it);}return out;}
@@ -1487,47 +1508,45 @@ const QUESTIONS = [
   {num:96,section:"2025 인트레이닝",chapter:"족관절",question:"",choices:["","","","",""],answer:5,explanation:"",question_images:["images/2025it_q96.png"],explanation_images:["images/2025it_e96.png"]},
   {num:97,section:"2025 인트레이닝",chapter:"족관절",question:"",choices:["","","","",""],answer:5,explanation:"",question_images:["images/2025it_q97.png"],explanation_images:["images/2025it_e97.png"]},
   {num:98,section:"2025 인트레이닝",chapter:"족관절",question:"",choices:["","","","",""],answer:5,explanation:"",question_images:["images/2025it_q98.png"],explanation_images:["images/2025it_e98.png"]},
-  /* ===== 2026 해설정리 — PPT 슬라이드(시나리오·해설) 분야별 ===== */
-  {num:1,section:"2026 해설정리",chapter:"기타",question:"점액낭염, 건초염등에사용하는물리치료들중조직에직접 전도열을전달하는치료는? (사진들로보기제시)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n점액낭염, 건초염등에사용하는물리치료들중조직에직접\n전도열을전달하는치료는?\n(사진들로보기제시)\n1.\n간섭파치료\n2.\n회전욕\n3.\n경피적전기신경자극\n4.\n파라핀욕\n5.\n초음파치료\n1차 시험 문제",question_images:[],explanation_images:["images/2026_s1.png"]},
-  {num:2,section:"2026 해설정리",chapter:"기타",question:"다음 사진 중 부갑상선호르몬이 직접 작용하는 세포는 무엇",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n다음 사진 중 부갑상선호르몬이 직접 작용하는 세포는 무엇\n인가?\n1차 시험 문제",question_images:[],explanation_images:["images/2026_s2.png"]},
-  {num:3,section:"2026 해설정리",chapter:"기타",question:"다음 제 1형 교원질 및 아래 사진을 이루는 물질들을 생성하 는데 중요한 역할을 하는 것은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n다음 제 1형 교원질 및 아래 사진을 이루는 물질들을 생성하\n는데 중요한 역할을 하는 것은?\n1.\n비타민 C\n2.\n요오드\n3.\n인산\n4.\n칼슘\n5.\n칼시토닌\n1차 시험 문제",question_images:[],explanation_images:["images/2026_s3.png"]},
-  {num:4,section:"2026 해설정리",chapter:"기타",question:"수술 중 free running EMG, 다음 A: base, B: 어떤 신호. B 신호는 수술 중 어떤 일이 일어나서 나타난 파동인가? A : B : 규칙적인 진동파 - 똑같지는 않으나, 이런파형이랑비슷",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n수술 중 free running EMG, 다음 A: base, B: 어떤 신호.\nB 신호는 수술 중 어떤 일이 일어나서 나타난 파동인가?\nA :\nB : 규칙적인 진동파 - 똑같지는 않으나,\n이런파형이랑비슷\n1.\n주변에서 bovie 전기신호로 인한 artifact\n2.\n혈압 떨어져서 혈류 감소\n3.\n의도적으로 MEP (motor evoked potentials) 자극을 줌\n4.\n신경이 traction되고 있음\n5.\n신경 회복으로 MUAP(motor unit action potential)가 나오고 있음\n1차 시험 문제",question_images:[],explanation_images:["images/2026_s4.png"]},
-  {num:5,section:"2026 해설정리",chapter:"기타",question:"55세 여자, 인공슬관절치환술 예정이다. 현재 RA에 대하여 Sulfasalazine, Methotraxate를 복용중에 있다. 상처회복을 위하여 위 환자에게서 Sulfasal zine, MTX 를 수술전에 언제 중단해야하는가?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n55세 여자, 인공슬관절치환술 예정이다. 현재 RA에 대하여 Sulfasalazine,\nMethotraxate를 복용중에 있다. 상처회복을 위하여 위 환자에게서 Sulfasal\nzine, MTX 를 수술전에 언제 중단해야하는가?\n1.\nSulfasalazine, MTX 모두 중단할 필요 없다.\n2.\nSulfasalazine, MTX 모두 2일전 중단한다.\n3.\nSulfasalazine만 3일전 중단한다.\n4.\nMTX만 3일전 중단한다.\n5.\nSulfasalazine, MTX 모두 7일전 중단한다.\n1차 시험 문제\nRA환자 약물 중에는 Conventional drug, TNF-α Inhibitors 있다. 그 중 TNF-α Inhibitors (ex. Etaner\ncpet, Infliximab) 등은 wound problem으로 반드시 수술 전 중단을 권고하고 있다.  단, Convention\nal drug (Methotraxate, Sulfasalazine, Hydroxyquinolone, Leflunomide) 은약제중단이 필요\n치않으며 hold 없이 수술할 수 있다.",question_images:[],explanation_images:["images/2026_s5.png"]},
-  {num:6,section:"2026 해설정리",chapter:"기타",question:"1)인공슬관절에서 주로 마모가 되는 기전은 무엇인가?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n1)인공슬관절에서 주로 마모가 되는 기전은 무엇인가?\n(2차)인공고관절치환술 중 대퇴 경부 절제 후 actabulum에 거즈 넣어놓는 사진, 예방하고자하는 마모 기전은?\n1차 시험 문제\n<족보>\nTKA : 피로마모\nTHA : 점착, 연마마모\n3rd body wear : 연마",question_images:[],explanation_images:["images/2026_s6.png"]},
-  {num:7,section:"2026 해설정리",chapter:"고관절",question:"- THA 수술 관절면 선택 시 골두 세라믹 liner의 장단점. A 골두시 B골두 보다 발생할 가능성이 높은것은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- THA 수술 관절면 선택 시 골두 세라믹 liner의 장단점. A 골두시 B골두 보다 발생할 가능성이 높은것은?\n1.\n골두골절 (ceramic head 골절)\n2.\n임플란트 주위 감염  (PJI)\n3.\n임플란트 주위 골절 (periprosthetic Fx)\n4.\n탈구 (dislocation)\n5.\nALVAL (Aseptic Lymphocyte-Dominant Vasculitis-Associated Lesions)\n고관절\nA :  3세대 세라믹골두 (베이지색)\nB :  4세대 세라믹 골두 (분홍색) <- 지르코니윰 들어간 new 버젼.\n** ALVAL (Aseptic Lymphocyte-Dominant Vasculitis-Associated Lesions\n)이라는 금속-금속 고관절 인공관절 관련 부작용, 마모된 금속 파편이 주\n변 조직에 염증 반응을 일으켜 림프구 중심의 혈관염을 유발하는 상태입\n니다.\nA\nB",question_images:[],explanation_images:["images/2026_s7.png"]},
-  {num:8,section:"2026 해설정리",chapter:"고관절",question:"- Trendelenburg gait 영상, THA 시행시 이와 같은 합병증이 가장 잘 발생하는 접근법은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Trendelenburg gait 영상, THA 시행시 이와 같은 합병증이 가장 잘 발생하는 접근법은?\n고관절",question_images:[],explanation_images:["images/2026_s8.png"]},
-  {num:9,section:"2026 해설정리",chapter:"고관절",question:"- Pelvic ring fracture x-ray, 진단명?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Pelvic ring fracture x-ray, 진단명?\n1.\n양 골주 골절\n2.\n전주 골절 + 후방 반 횡골절\n3.\n후주 골절 + 후벽 골절\n4.\nTransverse + posterior acetabular wall Fx.\n5.\nT type fracture\n고관절\n- pelvic spur sign\n: pathognomonic for a both column acetabular fracture.\n- AP or obturator oblique x-ray\n- spur : the intact portion of the ilium, still attached to the axial\nskeleton and seen posterosuperior to the displaced acetabulum\n(typically medially displaced)",question_images:[],explanation_images:["images/2026_s9.png"]},
-  {num:10,section:"2026 해설정리",chapter:"고관절",question:"- Pelvic ring fracture x-ray, 진단명?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Pelvic ring fracture x-ray, 진단명?\n• 양 골주 골절\n• 전주 골절 + 후방 반 횡골절\n• 후주 골절 + 후벽 골절\n• Transverse + posterior acetabular wall Fx.\n• T type fracture\n고관절",question_images:[],explanation_images:["images/2026_s10.png"]},
-  {num:11,section:"2026 해설정리",chapter:"고관절",question:"- Hip internal impingement에 대하여 보존적 치료 시행하였으나 호전 없어서 Arthroscopic decompression 수술하였다.  수술 후 배가 아프고 빵빵해져서 촬영한 APCT, 이러한 합병증을 줄이기 위해서 해야하는 것은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Hip internal impingement에 대하여 보존적 치료 시행하였으나 호전 없어서\nArthroscopic decompression 수술하였다.  수술 후 배가 아프고 빵빵해져서\n촬영한 APCT, 이러한 합병증을 줄이기 위해서 해야하는 것은?\n1.\n과도한 견인 자제\n2.\n충분한 관절낭 절제\n3.\n관류압을 50mmHg로 유지\n4.\nTenotomy를 관절경적 술기 제일 마지막에 해야한다\n고관절",question_images:[],explanation_images:["images/2026_s11.png"]},
-  {num:12,section:"2026 해설정리",chapter:"고관절",question:"- Hip internal impingement에 대하여 보존적 치료 시행하였으나 호전 없어서 Arthroscopic decompression 수술하였다.  수술 후 배가 아프고 빵빵해져서 촬영한 APCT, 이러한 합병증을 줄이기 위해서 해야하는 것은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Hip internal impingement에 대하여 보존적 치료 시행하였으나 호전 없어서\nArthroscopic decompression 수술하였다.  수술 후 배가 아프고 빵빵해져서\n촬영한 APCT, 이러한 합병증을 줄이기 위해서 해야하는 것은?\n고관절",question_images:[],explanation_images:["images/2026_s12.png"]},
-  {num:13,section:"2026 해설정리",chapter:"슬관절",question:"- 68세 여자환자 X-ray, MRI / 2주전부터 극심한 통증으로 보행이 어렵다. 치료는?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 68세 여자환자 X-ray, MRI / 2주전부터 극심한 통증으로 보행이 어렵다. 치료는?\n1. 경과관찰\n2. A/S debridement\n3. A/S 천공술\n4. HTO / 인공관절관련보기없었음\n슬관절",question_images:[],explanation_images:["images/2026_s13.png"]},
-  {num:14,section:"2026 해설정리",chapter:"슬관절",question:"SIFK (subchondral insufficiency fracture knee)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\nSIFK (subchondral insufficiency fracture knee)\n슬관절",question_images:[],explanation_images:["images/2026_s14.png"]},
-  {num:15,section:"2026 해설정리",chapter:"슬관절",question:"- Shatzker type III, 수술 중 screw 2개 박혀있는 X-ray. screw가 저항하는 것은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Shatzker type III, 수술 중 screw 2개 박혀있는 X-ray. screw가 저항하는 것은?\n1.\n각 안정성\n2.\n골편간 압력\n3.\n전단력 저항\n4.\n축성부하 저항\n5.\n회전부하 저항\n슬관절\n축성부하? -> 전단력 아닌가요?\n> schaztker 3 여서 rafting 축성\n부하가 더 맞을듯\n--> Rafting screw(buttress)는\n축성부하에 의한 골절편의 전단\n력에 저항하기 위한 screw 라\n생각돼서 전단력->저도 같은이\n유로 shearing force",question_images:[],explanation_images:["images/2026_s15.png"]},
-  {num:16,section:"2026 해설정리",chapter:"척추",question:"- 53세 여자 편두통이 있고, 후두부 표시한 부위의 통증이 지속된다. 진단적으로block 해줄때에 맞는 부위는?",choices:["","","","",""],answer:2,explanation:"- 53세 여자 편두통이 있고, 후두부 표시한 부위의 통증이 지속된다.\n진단적으로block 해줄때에 맞는 부위는?\n1.\nC1 신경근\n2.\nC1-C2 척추간관절\n3.\nC2-C3 후관절\n4.\nC3-C4 후관절\n5.\nC4-C5 후관절\n척추\n답: 2? 3?\n-> 증상완화를 위한 GONB면 2번인데, 진단\n적으로라서 C2-3 facet SD 감별위해 3번 같\n습니다.",question_images:[],explanation_images:["images/2026_s16.png"]},
-  {num:17,section:"2026 해설정리",chapter:"기타",question:"Netter’s anatomy",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\nNetter’s anatomy\n2번이라는 해설\n해당 부위 Dermatome은 C2 입니다.\n더 자세하게는, 증상부위가 greater occipital nerve의 지배를\n받고, Greater occipital nerve는 C2 에서 유래되기 때문에\nC1-C2 level 이 됩니다.\n3번이라는 해설\n저는 extension시 악화된다고 해서 C2-3했어요\nC1-2는 flex-ext 때 영향거의 없고,\ndermatome상으로도 C2-3에 가까워서…\n>>ㅇㅇ 그림이 딱 C2-3 골라라 그림이었어요",question_images:[],explanation_images:["images/2026_s17.png"]},
-  {num:18,section:"2026 해설정리",chapter:"척추",question:"- 53세 여자 편두통이 있고, 후두부 표시한 부위의 통증이 지속된다. 진단적으로block 해줄때에 맞는 부위는?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 53세 여자 편두통이 있고, 후두부 표시한 부위의 통증이 지속된다.\n진단적으로block 해줄때에 맞는 부위는?\n척추",question_images:[],explanation_images:["images/2026_s18.png"]},
-  {num:19,section:"2026 해설정리",chapter:"척추",question:"- 8세 여아가 오늘 아침부터 목이 기울었으며 신경학적 증상은 없다. 치료는?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 8세 여아가 오늘 아침부터 목이 기울었으며 신경학적 증상은 없다. 치료는?\n1.\nSkeletal traction\n2.\n관혈적 정복술\n3.\n연성 보조기\n4.\nHalo 보조기\n5.\nHalter traction\n척추\nElite 척추 p.66\n증상기간 < 1주: soft collar\n증상기간 > 1주: head halter traction\n증상기간 > 1개월: Skeletal traction",question_images:[],explanation_images:["images/2026_s19.png"]},
-  {num:20,section:"2026 해설정리",chapter:"견주관절",question:"- 견관절 극상건 종축 초음파 소견이다. 아텔로콜라겐 사용이 적합한 소견은? (초음파 사진으로 보기가 나옴)",choices:["","","","",""],answer:3,explanation:"- 견관절 극상건 종축 초음파 소견이다.\n아텔로콜라겐 사용이 적합한 소견은?\n(초음파 사진으로 보기가 나옴)\n1. small tear\n2. normal\n3. partial tear (bursal side)\n4. large tear\n5. calcification\n견주관절\n답3번 : intratendinous tear\n(출제위원 피셜)\n1\n2\n3\n4\n5",question_images:[],explanation_images:["images/2026_s20.png"]},
-  {num:21,section:"2026 해설정리",chapter:"견주관절",question:"- Remplissage 술기 영상 장면 제시 (humerus head에 anchor 박고 capsule을 끌어와 고정하는 영상), 다음 관절경 술기에서 사용되는 portal을 고르시오.",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Remplissage 술기 영상 장면 제시 (humerus head에 anchor 박고 capsule을\n끌어와 고정하는 영상), 다음 관절경 술기에서 사용되는 portal을 고르시오.\n1.\nposterior portal\n2.\nlateral portal\n3.\nanterolateral portal\n4.\njust lat to coracoid\n5.\nNevissare\n견주관절",question_images:[],explanation_images:["images/2026_s21.png"]},
-  {num:22,section:"2026 해설정리",chapter:"견주관절",question:"- 50세 남자, 3m fall down. Judet approach 시 조심해야 될 구조물을 고르시오 XR : glenoid 침범하지 않은 glenoid 아래 body 의 comminuted fracture c displacement + (post op.) plate OR/IF X-ray,  CT : XR과 동일소견, 카데바사진: teres minor, teres major, triceps long head triceps는 detached 되어있었고, teres major 근처 구조물 화살표",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 50세 남자, 3m fall down. Judet approach 시 조심해야 될 구조물을 고르시오\nXR : glenoid 침범하지 않은 glenoid 아래 body 의 comminuted fracture c\ndisplacement + (post op.) plate OR/IF X-ray,  CT : XR과 동일소견,\n카데바사진: teres minor, teres major, triceps long head\ntriceps는 detached 되어있었고, teres major 근처 구조물 화살표\n1.\nDorsal scapular artery\n2.\nCircumflex scapular artery\n3.\nAxillary nerve\n4.\nSubscapular nerve\n5.\nThoracodorsal artery\n견주관절",question_images:[],explanation_images:["images/2026_s22.png"]},
-  {num:23,section:"2026 해설정리",chapter:"견주관절",question:"- Elbow arthroscope시 saline inj. site portal을 고르시오.",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Elbow arthroscope시 saline inj. site portal을 고르시오.\n1.\nProximal lateral\n2.\nProximal central\n3.\nProximal medial\n4.\nDistal lateral\n5.\nDistal medial\n견주관절\ndistal\nradial\nulnar\n다\n라\n가\n나\n마\nRt elbow prone position으로 위치시켰음\nproximal",question_images:[],explanation_images:["images/2026_s23.png"]},
-  {num:24,section:"2026 해설정리",chapter:"외상",question:"- 화살표로 가리키는 screw 를 삽입하는 순서를 고르시오 가. 2.5 mm drill bit cortical 뚫기 나. 3.5 mm drill bit cortical 뚫기 다. counter sinking 라. depth gauze 마. tapping",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 화살표로 가리키는 screw 를 삽입하는 순서를 고르시오\n가. 2.5 mm drill bit cortical 뚫기\n나. 3.5 mm drill bit cortical 뚫기\n다. counter sinking\n라. depth gauze\n마. tapping\n1.\n가나다라마\n2.\n가다라나마\n3.\n나마가다라\n4.\n나가다라마\n5.\n나가라다마\n외상",question_images:[],explanation_images:["images/2026_s24.png"]},
-  {num:25,section:"2026 해설정리",chapter:"외상",question:"외상",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n외상",question_images:[],explanation_images:["images/2026_s25.png"]},
-  {num:26,section:"2026 해설정리",chapter:"외상",question:"- femur plate 고정 중 4.5mm A screw, 5.0mm B screw 사용시, 사용해야하는drill bit size는?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- femur plate 고정 중 4.5mm A screw, 5.0mm B screw 사용시,\n사용해야하는drill bit size는?\n• 3.2 / 3.2\n• 3.2 / 4.3\n• 4.2 / 4.3\n• 4.5 / 5.0\n• 5.0 / 5.0\n외상\nA\nB",question_images:[],explanation_images:["images/2026_s26.png"]},
-  {num:27,section:"2026 해설정리",chapter:"족부족관절",question:"- 34세 남성 교통사고 후 내원한 환자의 발 x-ray 치료는?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 34세 남성 교통사고 후 내원한 환자의 발 x-ray 치료는?\n1.\npercutaneous pinning\n2.\n관혈적 정복술 & 외고정기\n3.\n유합술\n4.\n석고고정술\n5.\n골편제거술\n족부족관절\nCampbell 14th p.4460",question_images:[],explanation_images:["images/2026_s27.png"]},
-  {num:28,section:"2026 해설정리",chapter:"족부족관절",question:"- 종아리 중간쯤 longitudinal 하게 sono probe 대고 있는 사진 -> 초음파로 확인할 수 있는 영상은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 종아리 중간쯤 longitudinal 하게 sono probe 대고 있는\n사진 -> 초음파로 확인할 수 있는 영상은?\n족부족관절",question_images:[],explanation_images:["images/2026_s28.png"]},
-  {num:29,section:"2026 해설정리",chapter:"족부족관절",question:"- 35세 남자가 발등 위측으로 돌출이 있다. 신체검진(사진 A,B)와 X-ray(C,D)는 다 음과 같다. 진단은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 35세 남자가 발등 위측으로 돌출이 있다. 신체검진(사진 A,B)와 X-ray(C,D)는 다\n음과 같다. 진단은?\n1.\nclub foot\n2.\nmetatarsus adductus\n3.\nvarus adductus\n4.\nskew foot\n5.\ntalipes equinovarus\n외상/족부족관절\nforefoot adduction and heel valgus",question_images:[],explanation_images:["images/2026_s29.png"]},
-  {num:30,section:"2026 해설정리",chapter:"족부족관절",question:"- Ankle scope 에서 보이는 영상을 주고 해당 소견을 보일 수 있는 X-ray 를 고르시오.",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- Ankle scope 에서 보이는 영상을 주고 해당 소견을 보일 수 있는 X-ray 를 고르시오.\n1.\nAnterior impingement\n2.\nOLT\n3.\nOA ankle (takakura 3A or 3B)\n4.\nPTTD\n5.\nTalar neck과 TIbia가 impinge\n족부족관절\nTram track sign",question_images:[],explanation_images:["images/2026_s30.png"]},
-  {num:31,section:"2026 해설정리",chapter:"소아",question:"- 출생 시 선천성 만곡족으로 치료받은 환아가 4세 6개월에 아래와 같은 소견으로 내원. A) gait 동영상 제시 (swing phase 때 forefoot supination 보임) B) 소아  foot x-ray 다음중전경골을전체이식할때가장 자주 쓰이는이식부는?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n- 출생 시 선천성 만곡족으로 치료받은 환아가 4세 6개월에 아래와 같은 소견으로 내원.\nA) gait 동영상 제시 (swing phase 때 forefoot supination 보임)\nB) 소아  foot x-ray\n다음중전경골을전체이식할때가장 자주 쓰이는이식부는?\n1.\nTalus\n2.\n2nd cuneiform\n3.\n3rd cuneiform\n4.\nCuboid\n5.\n4th MT base\n소아\n대정 P 296 clubfoot 의 잔존 변형",question_images:[],explanation_images:["images/2026_s31.png"]},
-  {num:32,section:"2026 해설정리",chapter:"소아",question:"소아",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n소아",question_images:[],explanation_images:["images/2026_s32.png"]},
-  {num:33,section:"2026 해설정리",chapter:"소아",question:"-2세 환아가 내반슬로 내원하였다. XR 소견은 아래와 같다. (양측 genu varum 및 epiphys eal cupping 저명한 teleradiogram) Lab 검사 상 inorganic P 3.3 (정상 3.9-5.8), ALP 1177 , 25 hydroxyvitamin D 9.0pg 확인되었다. PHEX 유전자 이상이 확인되었다. XR에서 보이 는 이상 소견의 원인은?",choices:["","","","",""],answer:3,explanation:"-2세 환아가 내반슬로 내원하였다. XR 소견은 아래와 같다. (양측 genu varum 및 epiphys\neal cupping 저명한 teleradiogram) Lab 검사 상 inorganic P 3.3 (정상 3.9-5.8), ALP 1177\n, 25 hydroxyvitamin D 9.0pg 확인되었다. PHEX 유전자 이상이 확인되었다. XR에서 보이\n는 이상 소견의 원인은?\n1.\n랑비에구에서 골 용적 성장 제한\n2.\n성장판 정지대에서 연골세포 분열 제한\n3.\n성장판 비후대 연골세포 사멸 문제\n4.\n성장판 연골세포 증식 제한\n5.\n유기질 합성 문제\n소아\n답: ③성장판 비후대 연골세포 사멸 문제\n해설 PHEX loss-of-function → FGF23↑ → 신장 phosphate wastin\ng → 만성 저인산혈증 → 성장판(특히 hypertrophic zone)에서 ter\nminal differentiation/무기질화 실패 + phosphate 유도 apoptosis\n(연골세포 사멸) 장애→ 성장판이넓고불규칙해지고, metaphysi\ns에서 mineralized bone으로의 전환이 지연/실패 → fraying/splayi\nng/cupping이 나타납니다.",question_images:[],explanation_images:["images/2026_s33.png"]},
-  {num:34,section:"2026 해설정리",chapter:"2차 구술",question:"1)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n1)\n진단은 (1점)?\n2)\nStage는 (1점)?\n3)\n수술적 치료를 고려할 때 적절한 것 2가지만 (2점)?\n4)\n그 수술을 선택한 이유는 (1점)?\n33세 남자 환자가 1년전 부터 좌측 손목 통증이 지속된다.\nB\nRt\nRt\n2025년 대정추계학회(마곡코엑스) 부스 : 2차 구술 시험 예시 문항",question_images:[],explanation_images:["images/2026_s34.png"]},
-  {num:35,section:"2026 해설정리",chapter:"기타",question:"정답",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n정답\n1)\n케엔백 병\n2)\nstage 2\n3)\n관절 평준화 술식; Radial wedge osteotomy. Capitate shortening와\n재혈관화 술식; Vascularized bone graft 중 2개\n4)  관절염 소견이 없고, 월상골의 형태가 보존되어 있고 carpal collapse가 없고,\nscapholunte angle이 정상 범위여서  lunate preserving 술식을 할 수 있다\n2026 B2\nStage IIIB\n진단,stage,치료,이유",question_images:[],explanation_images:["images/2026_s35.png"]},
-  {num:36,section:"2026 해설정리",chapter:"2차 구술",question:"1번방",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n1번방\n수부 : Kienbock disease (X-ray) / Stage, 치료, 이유\n견주 : Elbow terrible triad (X-ray/CT) / 영상소견, 수술 순서\n2번방\n고관절 : Ceramic head fracture (X-ray/CT) / 영상소견, 수술할 때 반드시 고려할 점\n족부 : Ankle fracture (X-ray/CT), SER stage 4/ 영상소견, 수상기전, 추가 검사\n3번방\n외상 : Open tibia shaft comm. Fracture (X-ray/Gross photo) / 구스틸로 앤더슨 분류, 환자에게 확인해야할 추가 검사\n종양 : 22 F, distal femur MFC 국한된 osteolytic lesion (X-ray), GCT? CB? Clear cell CSA? / 영상소견, 가능한 진단, 치료\n4번방\n소아 : Lateral condylar fracture (X-ray) / 영상소견, 치료\n소아 : LCPD (X-ray) /  영상소견, 예후\n5번방\n척추 : Compressive cervical myelopathy c OPLL (X-ray,CT,MRI) / 영상소견, 환자에게 양성으로 나올 수 있는 신체검사 3가지 이상 OSCE (모의환자)\n(1/3차시에서 HIVD P/E이나와서, 경추 P/E 위주로 준비했음)\n6번방\n고관절 : THA periprosthetic fracture (X-ray), vancouver B2or3 / 영상소견, 수술할 때 고려할 점\n슬관절 : 10년된 TKA 환자, femur component osteolysis (X-ray) / 영상소견, 수술할 때 고려할 점\n2026 2차 시험 구술 문제: Session 2/3차시",question_images:[],explanation_images:["images/2026_s36.png"]},
-  {num:37,section:"2026 해설정리",chapter:"2차 구술",question:"1) 환아의 신체 소견?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n1) 환아의 신체 소견?\n2) 정복을 방해하는 구조물?\n3) 폐쇄적 정복을 하기위한방법?\n2026 2차 시험 구술 문제- 소아\n(어려웠던 구술 문제)",question_images:[],explanation_images:["images/2026_s37.png"]},
-  {num:38,section:"2026 해설정리",chapter:"종양",question:"종양",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n종양\nDistal ulnar diaphysis 에 골병변이 있어 타원에서 무계획절제 후 clear cell 보이는 malig\nnant tumor 보여 전원 온 환자, X-ray 상 수술 전 후 사진 (소파술 시행)\n1) 이전 진료한 병원에 요청해야 하는 자료?\n수술전MRI, 검체사진, 병리슬라이드, 수술기록지...등등...\n2) 그런 자료가 필요한 이유?\n2026 2차 시험 구술 문제\n(어려웠던 구술 문제)",question_images:[],explanation_images:["images/2026_s38.png"]},
-  {num:39,section:"2026 해설정리",chapter:"기타·참고",question:"1. 응시자격 충족",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n1. 응시자격 충족\n3. 시험에 관하여\n4. 후기\n2. 정형외과 공부",question_images:[],explanation_images:["images/2026_s39.png"]},
-  {num:40,section:"2026 해설정리",chapter:"2차 구술",question:"1) 2026년도 제69차 전문의 자격시험 참고 문헌 자료",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시되지 않았습니다 — 아래 해설·이미지를 참고하세요.\n\n1) 2026년도 제69차 전문의 자격시험 참고 문헌 자료\n1.\nGray's Anatomy (international student edition)\n2.\nCampbell's Operative Orthopedics (14판, 2020년 출판) ; Figure 참고\n3.\nRockwood & Green's Fracture (9판, 2019년) ; Algorithm 참고\n4.\nInstructional Course Lecture\n(2023, 2024, 2025년에 발간된 대한정형외과학회 연수강좌 및AAOS ICL)\n5.\n정형외과학(교과서, 8판, 2020년) ; 이해가 안되는 파트들 발췌독, 총론/종양파트 그림들\n6.\n대한정형외과학회지, CiOS (2024, 2025년도 발간)\n2) 구술시험대비 목차 90개\n구술시험을 준비하는 방식 2부류로 나뉨 - 목차 제공된 부분만 준비하는 부류 / 전반적으로 공부한 부류\n- 실제 시험 ; 목차와 출제된 문제와의 긴밀한 연관성은 없었음/ 어떤 방식이든, 자기만의 방식대로 전반을 아우르는 중요한 내용들을 외우면 답 가능했음\n현실적으로, 다 볼 수가 없었습니다.\n결론 : “1차, 2차 SBT, 2차 구술” 시험을 나눠서 대비할 필요 없음.\n“시험대비가아닌, 정형외과 공부” 를 목표로 하자, 기출 위주의 주요질환들 세부적인 ‘중요내용’까지아울러서공부!!!\n@ 중요내용이란?\n- 내 주관 개입 지양 (내가 중요하다고 생각이 드는 부분은, 나한테만 흥미로울뿐이지 중요한 내용이 아닐수도 있다.)\n- “평소 과장님들께서 질문하셨던 것들, 연수강좌 때 강조했던 부분들, 최근 학회에 자주 거론되는 trend” 가 중요하다.\n1,2차 시험 준비",question_images:[],explanation_images:["images/2026_s40.png"]}
+  /* ===== 2026 해설정리 — PPT 슬라이드(시나리오·해설) 분야별 ===== */,
+  /* ===== 2026 해설정리 — PPT 슬라이드: 문제/풀이 분리, 분야별 ===== */,
+  /* ===== 2026 해설정리 — PPT 슬라이드: 문제/풀이 분리, 분야별 ===== */
+  {num:1,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 점액낭염, 건초염등에사용하는물리치료들중조직에직접 전도열을전달하는치료는? (사진들로보기제시)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q1.png"],explanation_images:[]},
+  {num:2,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 다음 사진 중 부갑상선호르몬이 직접 작용하는 세포는 무엇 인가?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q2.png"],explanation_images:[]},
+  {num:3,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 다음 제 1형 교원질 및 아래 사진을 이루는 물질들을 생성하 는데 중요한 역할을 하는 것은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q3.png"],explanation_images:[]},
+  {num:4,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 수술 중 free running EMG, 다음 A: base, B: 어떤 신호. B 신호는 수술 중 어떤 일이 일어나서 나타난 파동인가? A : B : 규칙적인 진동파 - 똑같지는 않으나, 이런파형이랑비슷",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q4.png"],explanation_images:[]},
+  {num:5,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 55세 여자, 인공슬관절치환술 예정이다. 현재 RA에 대하여 Sulfasalazine, Methotraxate를 복용중에 있다. 상처회복을 위하여 위 환자에게서 Sulfasal zine, MTX 를 수술전에 언제 중단해야하는가?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nRA환자 약물 중에는 Conventional drug, TNF-α Inhibitors 있다. 그 중 TNF-α Inhibitors (ex. Etaner\ncpet, Infliximab) 등은 wound problem으로 반드시 수술 전 중단을 권고하고 있다.  단, Convention\nal drug (Methotraxate, Sulfasalazine, Hydroxyquinolone, Leflunomide) 은약제중단이 필요\n치않으며 hold 없이 수술할 수 있다.",question_images:["images/2026_q5.png"],explanation_images:["images/2026_e5.png"]},
+  {num:6,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 1)인공슬관절에서 주로 마모가 되는 기전은 무엇인가? (2차)인공고관절치환술 중 대퇴 경부 절제 후 actabulum에 거즈 넣어놓는 사진, 예방하고자하는 마모 기전은? <족보> TKA : 피로마모 THA : 점착, 연마마모 3rd body wear : 연마",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q6.png"],explanation_images:[]},
+  {num:7,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nA :  3세대 세라믹골두 (베이지색)\nB :  4세대 세라믹 골두 (분홍색) <- 지르코니윰 들어간 new 버젼.\n** ALVAL (Aseptic Lymphocyte-Dominant Vasculitis-Associated Lesions\n)이라는 금속-금속 고관절 인공관절 관련 부작용, 마모된 금속 파편이 주\n변 조직에 염증 반응을 일으켜 림프구 중심의 혈관염을 유발하는 상태입\n니다.",question_images:["images/2026_q7.png"],explanation_images:["images/2026_e7.png"]},
+  {num:8,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q8.png"],explanation_images:[]},
+  {num:9,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n- pelvic spur sign\n: pathognomonic for a both column acetabular fracture.\n- AP or obturator oblique x-ray\n- spur : the intact portion of the ilium, still attached to the axial\nskeleton and seen posterosuperior to the displaced acetabulum\n(typically medially displaced)",question_images:["images/2026_q9.png"],explanation_images:["images/2026_e9.png","images/2026_e9x9.png"]},
+  {num:10,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q10.png"],explanation_images:[]},
+  {num:11,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q11.png"],explanation_images:[]},
+  {num:12,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q12.png"],explanation_images:[]},
+  {num:13,section:"2026 해설정리",chapter:"슬관절",question:"슬관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n슬관절 SIFK (subchondral insufficiency fracture knee)",question_images:["images/2026_q13.png"],explanation_images:["images/2026_e13x14.png"]},
+  {num:14,section:"2026 해설정리",chapter:"슬관절",question:"슬관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n축성부하? -> 전단력 아닌가요?\n> schaztker 3 여서 rafting 축성\n부하가 더 맞을듯\n--> Rafting screw(buttress)는\n축성부하에 의한 골절편의 전단\n력에 저항하기 위한 screw 라\n생각돼서 전단력->저도 같은이\n유로 shearing force",question_images:["images/2026_q14.png"],explanation_images:["images/2026_e14.png"]},
+  {num:15,section:"2026 해설정리",chapter:"척추",question:"척추",choices:["","","","",""],answer:2,explanation:"답: 2? 3?\n-> 증상완화를 위한 GONB면 2번인데, 진단\n적으로라서 C2-3 facet SD 감별위해 3번 같\n습니다.\n\n2번이라는 해설\n해당 부위 Dermatome은 C2 입니다.\n더 자세하게는, 증상부위가 greater occipital nerve의 지배를\n받고, Greater occipital nerve는 C2 에서 유래되기 때문에\nC1-C2 level 이 됩니다.\n3번이라는 해설\n저는 extension시 악화된다고 해서 C2-3했어요\nC1-2는 flex-ext 때 영향거의 없고,\ndermatome상으로도 C2-3에 가까워서…\n>>ㅇㅇ 그림이 딱 C2-3 골라라 그림이었어요\nNetter’s anatomy",question_images:["images/2026_q15.png"],explanation_images:["images/2026_e15.png","images/2026_e15x17.png"]},
+  {num:16,section:"2026 해설정리",chapter:"척추",question:"척추",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q16.png"],explanation_images:[]},
+  {num:17,section:"2026 해설정리",chapter:"척추",question:"척추",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nElite 척추 p.66\n증상기간 < 1주: soft collar\n증상기간 > 1주: head halter traction\n증상기간 > 1개월: Skeletal traction",question_images:["images/2026_q17.png"],explanation_images:["images/2026_e17.png"]},
+  {num:18,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:3,explanation:"답3번 : intratendinous tear\n(출제위원 피셜)\n5",question_images:["images/2026_q18.png"],explanation_images:["images/2026_e18.png"]},
+  {num:19,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q19.png"],explanation_images:[]},
+  {num:20,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q20.png"],explanation_images:[]},
+  {num:21,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nradial\nulnar\n나\n라\ndistal",question_images:["images/2026_q21.png"],explanation_images:["images/2026_e21.png"]},
+  {num:22,section:"2026 해설정리",chapter:"외상",question:"외상",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n외상",question_images:["images/2026_q22.png"],explanation_images:["images/2026_e22x25.png"]},
+  {num:23,section:"2026 해설정리",chapter:"외상",question:"외상",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q23.png"],explanation_images:[]},
+  {num:24,section:"2026 해설정리",chapter:"족부족관절",question:"족부족관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nCampbell 14th p.4460",question_images:["images/2026_q24.png"],explanation_images:["images/2026_e24.png"]},
+  {num:25,section:"2026 해설정리",chapter:"족부족관절",question:"족부족관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q25.png"],explanation_images:[]},
+  {num:26,section:"2026 해설정리",chapter:"족부족관절",question:"외상/족부족관절 - 35세 남자가 발등 위측으로 돌출이 있다. 신체검진(사진 A,B)와 X-ray(C,D)는 다 음과 같다. 진단은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nforefoot adduction and heel valgus",question_images:["images/2026_q26.png"],explanation_images:["images/2026_e26.png"]},
+  {num:27,section:"2026 해설정리",chapter:"족부족관절",question:"족부족관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nTram track sign",question_images:["images/2026_q27.png"],explanation_images:["images/2026_e27.png"]},
+  {num:28,section:"2026 해설정리",chapter:"소아",question:"소아",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n대정 P 296 clubfoot 의 잔존 변형\n\n소아",question_images:["images/2026_q28.png"],explanation_images:["images/2026_e28.png","images/2026_e28x32.png"]},
+  {num:29,section:"2026 해설정리",chapter:"소아",question:"소아",choices:["","","","",""],answer:3,explanation:"답: ③성장판 비후대 연골세포 사멸 문제\n해설 PHEX loss-of-function → FGF23↑ → 신장 phosphate wastin\ng → 만성 저인산혈증 → 성장판(특히 hypertrophic zone)에서 ter\nminal differentiation/무기질화 실패 + phosphate 유도 apoptosis\n(연골세포 사멸) 장애→ 성장판이넓고불규칙해지고, metaphysi\ns에서 mineralized bone으로의 전환이 지연/실패 → fraying/splayi\nng/cupping이 나타납니다.",question_images:["images/2026_q29.png"],explanation_images:["images/2026_e29.png"]},
+  {num:30,section:"2026 해설정리",chapter:"2차 구술",question:"2025년 대정추계학회(마곡코엑스) 부스 : 2차 구술 시험 예시 문항 33세 남자 환자가 1년전 부터 좌측 손목 통증이 지속된다. Rt B Rt",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q30.png"],explanation_images:[]},
+  {num:31,section:"2026 해설정리",chapter:"기타",question:"2026 B2",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n정답\nStage IIIB\n진단,stage,치료,이유\n1)\n케엔백 병\n2)\nstage 2\n3)\n관절 평준화 술식; Radial wedge osteotomy. Capitate shortening와\n재혈관화 술식; Vascularized bone graft 중 2개\n4)  관절염 소견이 없고, 월상골의 형태가 보존되어 있고 carpal collapse가 없고,\nscapholunte angle이 정상 범위여서  lunate preserving 술식을 할 수 있다",question_images:["images/2026_q31.png"],explanation_images:[]},
+  {num:32,section:"2026 해설정리",chapter:"2차 구술",question:"2026 2차 시험 구술 문제: Session 2/3차시 1번방 수부 : Kienbock disease (X-ray) / Stage, 치료, 이유 견주 : Elbow terrible triad (X-ray/CT) / 영상소견, 수술 순서 2번방 고관절 : Ceramic head fracture (X-ray/CT) / 영상소견, 수술할 때 반드시 고려할 점 족부 : Ankle fracture (X-ray/CT), SER stage 4/ 영상소견, 수상기전, 추가 검사 3번방 외상 : Open tibia shaft comm. Fracture (X-ray/Gross photo) / 구스틸로 앤더슨 분류, 환자에게 확인해야할 추가 검사 종양 : 22 F, distal femur MFC 국한된 osteolytic lesion (X-ray), GCT? CB? Clear cell CSA? / 영상소견, 가능한 진단, 치료 4번방 소아 : Lateral condylar fracture (X-ray) / 영상소견, 치료 소아 : LCPD (X-ray) /  영상소견, 예후 5번방 척추 : Compressive cervical myelopathy c OPLL (X-ray,CT,MRI) / 영상소견, 환자에게 양성으로 나올 수 있는 신체검사 3가지 이상 OSCE (모의환자) (1/3차시에서 HIVD P/E이나와서, 경추 P/E 위주로 준비했음) 6번방 고관절 : THA periprosthetic fracture (X-ray), vancouver B2or3 / 영상소견, 수술할 때 고려할 점 슬관절 : 10년된 TKA 환자, femur component osteolysis (X-ray) / 영상소견, 수술할 때 고려할 점",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q32.png"],explanation_images:[]},
+  {num:33,section:"2026 해설정리",chapter:"2차 구술",question:"2026 2차 시험 구술 문제- 소아 (어려웠던 구술 문제)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q33.png"],explanation_images:[]},
+  {num:34,section:"2026 해설정리",chapter:"종양",question:"2026 2차 시험 구술 문제 (어려웠던 구술 문제)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q34.png"],explanation_images:[]},
+  {num:35,section:"2026 해설정리",chapter:"기타·참고",question:"1. 응시자격 충족",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q35.png"],explanation_images:[]},
+  {num:36,section:"2026 해설정리",chapter:"총론",question:"1,2차 시험 준비",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n참고\n3.\nRockwood & Green's Fracture (9\n판, 2019\n년) ; Algorithm\n참고\n4.\nInstructional Course Lecture\n연수강좌\n(2023, 2024, 2025\n년에\n발간된\n대한정형외과학회\n및AAOS ICL)\n5.\n정형외과학(\n교과서, 8\n판, 2020\n년) ;\n이해가\n안되는\n파트들\n발췌독,\n총론/\n종양파트\n그림들\n6.\n대한정형외과학회지, CiOS (2024, 2025\n년도\n발간)\n2) 구술시험대비 목차 90개\n구술시험을 준비하는 방식 2부류로 나뉨 - 목차 제공된 부분만 준비하는 부류 / 전반적으로 공부한 부류\n- 실제 시험 ; 목차와 출제된 문제와의 긴밀한 연관성은 없었음/ 어떤 방식이든, 자기만의 방식대로 전반을 아우르는 중요한 내용들을 외우면 답 가능했음\n현실적으로, 다 볼 수가 없었습니다.\n결론 : “1차, 2차 SBT, 2차 구술” 시험을 나눠서 대비할 필요 없음.\n“시험대비가아닌, 정형외과 공부” 를 목표로 하자, 기출 위주의 주요질환들 세부적인 ‘중요내용’까지아울러서공부!!!\n@ 중요내용이란?\n- 내 주관 개입 지양 (내가 중요하다고 생각이 드는 부분은, 나한테만 흥미로울뿐이지 중요한 내용이 아닐수도 있다.)\n- “평소 과장님들께서 질문하셨던 것들, 연수강좌 때 강조했던 부분들, 최근 학회에 자주 거론되는 trend” 가 중요하다.",question_images:["images/2026_q36.png"],explanation_images:["images/2026_e36.png"]}
 ];
 </script>
 
@@ -1550,7 +1569,7 @@ const SECTIONS=SECTION_DEFS.map(s=>({...s,questions:QUESTIONS.filter(q=>q.sectio
 let currentQ=null,currentQIdx=-1,currentSectionIdx=-1,wrongNotes=[],memoNotes=[],viewData={},answerData={},repeatMarks={},currentMemoTab='wrong',currentMemoFilter='all',appInitialized=false;
 let viewMode='welcome';
 /* ☕ 신규 기능 상태 */
-let mnemonics=[],studyLog={},examHistory=[],dailyGoal=20,pendingMemoImg=null,userExpl=[],pendingExplImg=null;
+let mnemonics=[],studyLog={},examHistory=[],dailyGoal=20,pendingMemoImg=null,userExpl=[],pendingExplImg=null,explEditOpen=false,editingExplId=null;
 let flashDeck=[],flashIdx=0,flashFlipped=false,flashStudied=null,flashTitle='',flashTotal=0;
 let examQuestions=[],examIdx=0,examAnswers={},examStartTs=0,examTimerId=null,examLimitSec=0,examConfig={sections:[],count:20,timer:true};
 
@@ -1670,7 +1689,7 @@ function goBack(){
 function openLightbox(src){const lb=document.createElement('div');lb.className='lightbox';lb.onclick=()=>lb.remove();lb.innerHTML='<img src="'+src+'">';document.body.appendChild(lb);}
 
 function loadQuestion(q){
-  currentQ=q;currentQIdx=QUESTIONS.indexOf(q);viewMode='quiz';pendingMemoImg=null;pendingExplImg=null;
+  currentQ=q;currentQIdx=QUESTIONS.indexOf(q);viewMode='quiz';pendingMemoImg=null;pendingExplImg=null;explEditOpen=false;editingExplId=null;
   const k=getQKey(q);
   if(!viewData[k])viewData[k]={count:0,lastViewed:0};
   viewData[k].count++;viewData[k].lastViewed=Date.now();syncToCloud();
@@ -1707,7 +1726,6 @@ function renderQuiz(){
   q.choices.forEach((ch,i)=>{const n=i+1;let cls='choice-btn';if(ea){cls+=' disabled';if(n===qAns)cls+=' correct';else if(n===ea.selected)cls+=' wrong';else cls+=' dimmed';}h+='<button class="'+cls+'" data-choice="'+n+'" onclick="selectAnswer('+n+')"><span class="choice-num">'+n+'</span><span class="choice-text">'+escapeHtml(ch)+'</span></button>';});
   h+='</div>';
   if(ea)h+=renderResult(q,ea.selected);
-  h+=userExplSectionHtml(q);
   h+=renderNoteSection(q);
   h+=mnemSectionHtml(q);
   const secQs=SECTIONS.find(s=>s.name===q.section);
@@ -1731,15 +1749,32 @@ function selectAnswer(num){
   buildBookList();updateStats();updateMemoCount();
 }
 function renderResult(q,sel){
-  const qAns=parseInt(q.answer,10);const ic=sel===qAns;
+  const qAns=parseInt(q.answer,10);const ic=sel===qAns;const k=getQKey(q);
   let h='<div class="result-banner '+(ic?'correct':'wrong')+'"><span style="flex:1"><span class="result-icon">'+(ic?'✅':'❌')+'</span> '+(ic?'정답입니다!':'오답 — 정답은 '+qAns+'번입니다')+'</span><button class="retry-btn" onclick="resetOneAnswer()">🔄 다시 풀기</button></div>';
-  if(q.explanation||q.reference||(q.explanation_images&&q.explanation_images.length)){
-    h+='<div class="explanation-box"><h3>📖 해설</h3>';
-    if(q.explanation)h+='<div class="expl-text">'+escapeHtml(q.explanation)+'</div>';
-    if(q.reference)h+='<div class="expl-ref">📚 '+escapeHtml(q.reference)+'</div>';
-    if(q.explanation_images&&q.explanation_images.length){h+='<div class="expl-images">';q.explanation_images.forEach(img=>{h+='<img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});h+='</div>';}
-    h+='</div>';
+  h+='<div class="explanation-box"><h3><span>📖 해설</span><button class="expl-edit-btn" title="내 해설 추가·수정" onclick="toggleExplEdit()">✏️</button></h3>';
+  // 원본 해설 (수정 불가)
+  const hasBuiltin=q.explanation||q.reference||(q.explanation_images&&q.explanation_images.length);
+  if(q.explanation)h+='<div class="expl-text">'+escapeHtml(q.explanation)+'</div>';
+  if(q.reference)h+='<div class="expl-ref">📚 '+escapeHtml(q.reference)+'</div>';
+  if(q.explanation_images&&q.explanation_images.length){h+='<div class="expl-images">';q.explanation_images.forEach(img=>{h+='<img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});h+='</div>';}
+  if(!hasBuiltin)h+='<div class="expl-none">등록된 해설이 없습니다. 우측 상단 ✏️ 로 직접 추가할 수 있어요.</div>';
+  // 내가 추가한 해설 (수정·삭제 가능)
+  const mine=userExpl.filter(n=>n.qKey===k).sort((a,b)=>a.created-b.created);
+  const editing=editingExplId?mine.find(n=>n.id===editingExplId):null;
+  if(mine.length){h+='<div class="uexpl-mine">';mine.forEach(n=>{
+    h+='<div class="uexpl-item"><div class="uexpl-badge">✏️ 내 해설'+(n.edited?' (수정됨)':'')+'</div>'
+      +(n.text?'<div class="uexpl-text">'+escapeHtml(n.text)+'</div>':'')
+      +(n.img?'<img class="uexpl-img" src="'+n.img+'" onclick="openLightbox(this.src)">':'')
+      +'<div class="uexpl-actions-row"><button class="uexpl-mini" onclick="editExpl('+n.id+')">✎ 수정</button><button class="uexpl-mini del" onclick="deleteUserExpl('+n.id+')">🗑 삭제</button></div></div>';
+  });h+='</div>';}
+  // 편집기 (✏️ 클릭 시)
+  if(explEditOpen){
+    h+='<div class="uexpl-editor"><div class="uexpl-editor-title">'+(editing?'✎ 내 해설 수정':'＋ 내 해설 추가')+'</div>';
+    h+='<textarea class="uexpl-input" id="uexplInput" placeholder="이 문제의 해설을 직접 입력하세요...  ( 📷 사진은 Ctrl+V 붙여넣기 또는 아래 [사진 첨부] )" onpaste="handleExplPaste(event)">'+(editing?escapeHtml(editing.text||''):'')+'</textarea>';
+    h+='<div class="uexpl-actions"><label class="uexpl-file">📷 사진 첨부<input type="file" accept="image/*" onchange="handleExplFile(event)" style="display:none"></label><span style="flex:1"></span><button class="uexpl-cancel" onclick="cancelExplEdit()">취소</button><button class="uexpl-save" onclick="saveUserExpl()">'+(editing?'수정 저장':'추가')+'</button></div>';
+    h+='<div id="uexplPreview" class="memo-img-preview" style="display:none"></div></div>';
   }
+  h+='</div>';
   return h;
 }
 function renderNoteSection(q){
@@ -2006,18 +2041,19 @@ function addMnem(){const i=document.getElementById('mnemInput');if(!i||!currentQ
 function deleteMnem(id){mnemonics=mnemonics.filter(n=>n.id!==id);syncToCloud();if(currentQ)renderQuiz();}
 
 /* ---------- 내 해설(보충) — 텍스트 + 사진 ---------- */
-function userExplSectionHtml(q){
-  const k=getQKey(q);
-  let h='<div class="uexpl-box"><div class="uexpl-head">✏️ 내 해설 · 보충 <span class="uexpl-sub">부족한 해설을 직접 적거나 사진을 붙여 채워두세요 (모든 기기 동기화)</span></div>';
-  h+='<textarea class="uexpl-input" id="uexplInput" placeholder="이 문제의 해설을 직접 입력하세요...  ( 📷 사진은 Ctrl+V 로 붙여넣거나 아래 [사진 첨부] )" onpaste="handleExplPaste(event)"></textarea>';
-  h+='<div class="uexpl-actions"><label class="uexpl-file">📷 사진 첨부<input type="file" accept="image/*" capture="environment" onchange="handleExplFile(event)" style="display:none"></label><button class="uexpl-add" onclick="addUserExpl()">＋ 해설 추가</button></div>';
-  h+='<div id="uexplPreview" class="memo-img-preview" style="display:none"></div>';
-  const items=userExpl.filter(n=>n.qKey===k).sort((a,b)=>a.created-b.created);
-  if(items.length){h+='<div class="uexpl-list">';items.forEach(n=>{h+='<div class="uexpl-item">'+(n.text?'<div class="uexpl-text">'+escapeHtml(n.text)+'</div>':'')+(n.img?'<img class="uexpl-img" src="'+n.img+'" onclick="openLightbox(this.src)">':'')+'<div class="uexpl-meta">'+timeAgo(n.created)+'</div><button class="uexpl-del" title="삭제" onclick="deleteUserExpl('+n.id+')">×</button></div>';});h+='</div>';}
-  h+='</div>';return h;
+function toggleExplEdit(){explEditOpen=!explEditOpen;editingExplId=null;pendingExplImg=null;if(currentQ)renderQuiz();}
+function editExpl(id){const n=userExpl.find(x=>x.id===id);if(!n)return;editingExplId=id;explEditOpen=true;pendingExplImg=n.img||null;if(currentQ)renderQuiz();}
+function cancelExplEdit(){explEditOpen=false;editingExplId=null;pendingExplImg=null;if(currentQ)renderQuiz();}
+function saveUserExpl(){
+  const i=document.getElementById('uexplInput');if(!currentQ)return;
+  const t=i?i.value.trim():'';
+  if(!t&&!pendingExplImg){alert('해설 내용이나 사진을 입력하세요');return;}
+  if(editingExplId){const n=userExpl.find(x=>x.id===editingExplId);if(n){n.text=t;n.img=pendingExplImg||null;n.edited=Date.now();}}
+  else{const k=getQKey(currentQ);userExpl.push({id:Date.now(),qKey:k,section:currentQ.section,qNum:currentQ.num,text:t,img:pendingExplImg||null,created:Date.now()});}
+  editingExplId=null;pendingExplImg=null;explEditOpen=false;
+  syncToCloud();renderQuiz();
 }
-function addUserExpl(){const i=document.getElementById('uexplInput');if(!currentQ)return;const t=i?i.value.trim():'';if(!t&&!pendingExplImg)return;const k=getQKey(currentQ);userExpl.push({id:Date.now(),qKey:k,section:currentQ.section,qNum:currentQ.num,text:t,img:pendingExplImg||null,created:Date.now()});if(i)i.value='';pendingExplImg=null;syncToCloud();renderQuiz();}
-function deleteUserExpl(id){if(!confirm('이 해설을 삭제할까요?'))return;userExpl=userExpl.filter(n=>n.id!==id);syncToCloud();if(currentQ)renderQuiz();}
+function deleteUserExpl(id){if(!confirm('내가 추가한 이 해설을 삭제할까요?'))return;userExpl=userExpl.filter(n=>n.id!==id);if(editingExplId===id){editingExplId=null;explEditOpen=false;}pendingExplImg=null;syncToCloud();if(currentQ)renderQuiz();}
 function handleExplPaste(e){
   const items=(e.clipboardData&&e.clipboardData.items)||[];
   for(let i=0;i<items.length;i++){
