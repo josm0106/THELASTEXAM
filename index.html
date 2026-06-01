@@ -665,7 +665,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260531-2050';
+const APP_VERSION='20260601-1744';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -1508,45 +1508,31 @@ const QUESTIONS = [
   {num:96,section:"2025 인트레이닝",chapter:"족관절",question:"",choices:["","","","",""],answer:5,explanation:"",question_images:["images/2025it_q96.png"],explanation_images:["images/2025it_e96.png"]},
   {num:97,section:"2025 인트레이닝",chapter:"족관절",question:"",choices:["","","","",""],answer:5,explanation:"",question_images:["images/2025it_q97.png"],explanation_images:["images/2025it_e97.png"]},
   {num:98,section:"2025 인트레이닝",chapter:"족관절",question:"",choices:["","","","",""],answer:5,explanation:"",question_images:["images/2025it_q98.png"],explanation_images:["images/2025it_e98.png"]},
-  /* ===== 2026 해설정리 — PPT 슬라이드(시나리오·해설) 분야별 ===== */,
-  /* ===== 2026 해설정리 — PPT 슬라이드: 문제/풀이 분리, 분야별 ===== */,
-  /* ===== 2026 해설정리 — PPT 슬라이드: 문제/풀이 분리, 분야별 ===== */
-  {num:1,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 점액낭염, 건초염등에사용하는물리치료들중조직에직접 전도열을전달하는치료는? (사진들로보기제시)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q1.png"],explanation_images:[]},
-  {num:2,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 다음 사진 중 부갑상선호르몬이 직접 작용하는 세포는 무엇 인가?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q2.png"],explanation_images:[]},
-  {num:3,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 다음 제 1형 교원질 및 아래 사진을 이루는 물질들을 생성하 는데 중요한 역할을 하는 것은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q3.png"],explanation_images:[]},
-  {num:4,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 수술 중 free running EMG, 다음 A: base, B: 어떤 신호. B 신호는 수술 중 어떤 일이 일어나서 나타난 파동인가? A : B : 규칙적인 진동파 - 똑같지는 않으나, 이런파형이랑비슷",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q4.png"],explanation_images:[]},
-  {num:5,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 55세 여자, 인공슬관절치환술 예정이다. 현재 RA에 대하여 Sulfasalazine, Methotraxate를 복용중에 있다. 상처회복을 위하여 위 환자에게서 Sulfasal zine, MTX 를 수술전에 언제 중단해야하는가?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nRA환자 약물 중에는 Conventional drug, TNF-α Inhibitors 있다. 그 중 TNF-α Inhibitors (ex. Etaner\ncpet, Infliximab) 등은 wound problem으로 반드시 수술 전 중단을 권고하고 있다.  단, Convention\nal drug (Methotraxate, Sulfasalazine, Hydroxyquinolone, Leflunomide) 은약제중단이 필요\n치않으며 hold 없이 수술할 수 있다.",question_images:["images/2026_q5.png"],explanation_images:["images/2026_e5.png"]},
-  {num:6,section:"2026 해설정리",chapter:"기타",question:"1차 시험 문제 1)인공슬관절에서 주로 마모가 되는 기전은 무엇인가? (2차)인공고관절치환술 중 대퇴 경부 절제 후 actabulum에 거즈 넣어놓는 사진, 예방하고자하는 마모 기전은? <족보> TKA : 피로마모 THA : 점착, 연마마모 3rd body wear : 연마",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q6.png"],explanation_images:[]},
-  {num:7,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nA :  3세대 세라믹골두 (베이지색)\nB :  4세대 세라믹 골두 (분홍색) <- 지르코니윰 들어간 new 버젼.\n** ALVAL (Aseptic Lymphocyte-Dominant Vasculitis-Associated Lesions\n)이라는 금속-금속 고관절 인공관절 관련 부작용, 마모된 금속 파편이 주\n변 조직에 염증 반응을 일으켜 림프구 중심의 혈관염을 유발하는 상태입\n니다.",question_images:["images/2026_q7.png"],explanation_images:["images/2026_e7.png"]},
-  {num:8,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q8.png"],explanation_images:[]},
-  {num:9,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n- pelvic spur sign\n: pathognomonic for a both column acetabular fracture.\n- AP or obturator oblique x-ray\n- spur : the intact portion of the ilium, still attached to the axial\nskeleton and seen posterosuperior to the displaced acetabulum\n(typically medially displaced)",question_images:["images/2026_q9.png"],explanation_images:["images/2026_e9.png","images/2026_e9x9.png"]},
-  {num:10,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q10.png"],explanation_images:[]},
-  {num:11,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q11.png"],explanation_images:[]},
-  {num:12,section:"2026 해설정리",chapter:"고관절",question:"고관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q12.png"],explanation_images:[]},
-  {num:13,section:"2026 해설정리",chapter:"슬관절",question:"슬관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n슬관절 SIFK (subchondral insufficiency fracture knee)",question_images:["images/2026_q13.png"],explanation_images:["images/2026_e13x14.png"]},
-  {num:14,section:"2026 해설정리",chapter:"슬관절",question:"슬관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n축성부하? -> 전단력 아닌가요?\n> schaztker 3 여서 rafting 축성\n부하가 더 맞을듯\n--> Rafting screw(buttress)는\n축성부하에 의한 골절편의 전단\n력에 저항하기 위한 screw 라\n생각돼서 전단력->저도 같은이\n유로 shearing force",question_images:["images/2026_q14.png"],explanation_images:["images/2026_e14.png"]},
-  {num:15,section:"2026 해설정리",chapter:"척추",question:"척추",choices:["","","","",""],answer:2,explanation:"답: 2? 3?\n-> 증상완화를 위한 GONB면 2번인데, 진단\n적으로라서 C2-3 facet SD 감별위해 3번 같\n습니다.\n\n2번이라는 해설\n해당 부위 Dermatome은 C2 입니다.\n더 자세하게는, 증상부위가 greater occipital nerve의 지배를\n받고, Greater occipital nerve는 C2 에서 유래되기 때문에\nC1-C2 level 이 됩니다.\n3번이라는 해설\n저는 extension시 악화된다고 해서 C2-3했어요\nC1-2는 flex-ext 때 영향거의 없고,\ndermatome상으로도 C2-3에 가까워서…\n>>ㅇㅇ 그림이 딱 C2-3 골라라 그림이었어요\nNetter’s anatomy",question_images:["images/2026_q15.png"],explanation_images:["images/2026_e15.png","images/2026_e15x17.png"]},
-  {num:16,section:"2026 해설정리",chapter:"척추",question:"척추",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q16.png"],explanation_images:[]},
-  {num:17,section:"2026 해설정리",chapter:"척추",question:"척추",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nElite 척추 p.66\n증상기간 < 1주: soft collar\n증상기간 > 1주: head halter traction\n증상기간 > 1개월: Skeletal traction",question_images:["images/2026_q17.png"],explanation_images:["images/2026_e17.png"]},
-  {num:18,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:3,explanation:"답3번 : intratendinous tear\n(출제위원 피셜)\n5",question_images:["images/2026_q18.png"],explanation_images:["images/2026_e18.png"]},
-  {num:19,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q19.png"],explanation_images:[]},
-  {num:20,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q20.png"],explanation_images:[]},
-  {num:21,section:"2026 해설정리",chapter:"견주관절",question:"견주관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nradial\nulnar\n나\n라\ndistal",question_images:["images/2026_q21.png"],explanation_images:["images/2026_e21.png"]},
-  {num:22,section:"2026 해설정리",chapter:"외상",question:"외상",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n외상",question_images:["images/2026_q22.png"],explanation_images:["images/2026_e22x25.png"]},
-  {num:23,section:"2026 해설정리",chapter:"외상",question:"외상",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q23.png"],explanation_images:[]},
-  {num:24,section:"2026 해설정리",chapter:"족부족관절",question:"족부족관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nCampbell 14th p.4460",question_images:["images/2026_q24.png"],explanation_images:["images/2026_e24.png"]},
-  {num:25,section:"2026 해설정리",chapter:"족부족관절",question:"족부족관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q25.png"],explanation_images:[]},
-  {num:26,section:"2026 해설정리",chapter:"족부족관절",question:"외상/족부족관절 - 35세 남자가 발등 위측으로 돌출이 있다. 신체검진(사진 A,B)와 X-ray(C,D)는 다 음과 같다. 진단은?",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nforefoot adduction and heel valgus",question_images:["images/2026_q26.png"],explanation_images:["images/2026_e26.png"]},
-  {num:27,section:"2026 해설정리",chapter:"족부족관절",question:"족부족관절",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\nTram track sign",question_images:["images/2026_q27.png"],explanation_images:["images/2026_e27.png"]},
-  {num:28,section:"2026 해설정리",chapter:"소아",question:"소아",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n대정 P 296 clubfoot 의 잔존 변형\n\n소아",question_images:["images/2026_q28.png"],explanation_images:["images/2026_e28.png","images/2026_e28x32.png"]},
-  {num:29,section:"2026 해설정리",chapter:"소아",question:"소아",choices:["","","","",""],answer:3,explanation:"답: ③성장판 비후대 연골세포 사멸 문제\n해설 PHEX loss-of-function → FGF23↑ → 신장 phosphate wastin\ng → 만성 저인산혈증 → 성장판(특히 hypertrophic zone)에서 ter\nminal differentiation/무기질화 실패 + phosphate 유도 apoptosis\n(연골세포 사멸) 장애→ 성장판이넓고불규칙해지고, metaphysi\ns에서 mineralized bone으로의 전환이 지연/실패 → fraying/splayi\nng/cupping이 나타납니다.",question_images:["images/2026_q29.png"],explanation_images:["images/2026_e29.png"]},
-  {num:30,section:"2026 해설정리",chapter:"2차 구술",question:"2025년 대정추계학회(마곡코엑스) 부스 : 2차 구술 시험 예시 문항 33세 남자 환자가 1년전 부터 좌측 손목 통증이 지속된다. Rt B Rt",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q30.png"],explanation_images:[]},
-  {num:31,section:"2026 해설정리",chapter:"기타",question:"2026 B2",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n정답\nStage IIIB\n진단,stage,치료,이유\n1)\n케엔백 병\n2)\nstage 2\n3)\n관절 평준화 술식; Radial wedge osteotomy. Capitate shortening와\n재혈관화 술식; Vascularized bone graft 중 2개\n4)  관절염 소견이 없고, 월상골의 형태가 보존되어 있고 carpal collapse가 없고,\nscapholunte angle이 정상 범위여서  lunate preserving 술식을 할 수 있다",question_images:["images/2026_q31.png"],explanation_images:[]},
-  {num:32,section:"2026 해설정리",chapter:"2차 구술",question:"2026 2차 시험 구술 문제: Session 2/3차시 1번방 수부 : Kienbock disease (X-ray) / Stage, 치료, 이유 견주 : Elbow terrible triad (X-ray/CT) / 영상소견, 수술 순서 2번방 고관절 : Ceramic head fracture (X-ray/CT) / 영상소견, 수술할 때 반드시 고려할 점 족부 : Ankle fracture (X-ray/CT), SER stage 4/ 영상소견, 수상기전, 추가 검사 3번방 외상 : Open tibia shaft comm. Fracture (X-ray/Gross photo) / 구스틸로 앤더슨 분류, 환자에게 확인해야할 추가 검사 종양 : 22 F, distal femur MFC 국한된 osteolytic lesion (X-ray), GCT? CB? Clear cell CSA? / 영상소견, 가능한 진단, 치료 4번방 소아 : Lateral condylar fracture (X-ray) / 영상소견, 치료 소아 : LCPD (X-ray) /  영상소견, 예후 5번방 척추 : Compressive cervical myelopathy c OPLL (X-ray,CT,MRI) / 영상소견, 환자에게 양성으로 나올 수 있는 신체검사 3가지 이상 OSCE (모의환자) (1/3차시에서 HIVD P/E이나와서, 경추 P/E 위주로 준비했음) 6번방 고관절 : THA periprosthetic fracture (X-ray), vancouver B2or3 / 영상소견, 수술할 때 고려할 점 슬관절 : 10년된 TKA 환자, femur component osteolysis (X-ray) / 영상소견, 수술할 때 고려할 점",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q32.png"],explanation_images:[]},
-  {num:33,section:"2026 해설정리",chapter:"2차 구술",question:"2026 2차 시험 구술 문제- 소아 (어려웠던 구술 문제)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q33.png"],explanation_images:[]},
-  {num:34,section:"2026 해설정리",chapter:"종양",question:"2026 2차 시험 구술 문제 (어려웠던 구술 문제)",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q34.png"],explanation_images:[]},
-  {num:35,section:"2026 해설정리",chapter:"기타·참고",question:"1. 응시자격 충족",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.",question_images:["images/2026_q35.png"],explanation_images:[]},
-  {num:36,section:"2026 해설정리",chapter:"총론",question:"1,2차 시험 준비",choices:["","","","",""],answer:1,explanation:"※ 슬라이드에 정답이 명시돼 있지 않습니다 — 해설/이미지를 참고하세요.\n\n참고\n3.\nRockwood & Green's Fracture (9\n판, 2019\n년) ; Algorithm\n참고\n4.\nInstructional Course Lecture\n연수강좌\n(2023, 2024, 2025\n년에\n발간된\n대한정형외과학회\n및AAOS ICL)\n5.\n정형외과학(\n교과서, 8\n판, 2020\n년) ;\n이해가\n안되는\n파트들\n발췌독,\n총론/\n종양파트\n그림들\n6.\n대한정형외과학회지, CiOS (2024, 2025\n년도\n발간)\n2) 구술시험대비 목차 90개\n구술시험을 준비하는 방식 2부류로 나뉨 - 목차 제공된 부분만 준비하는 부류 / 전반적으로 공부한 부류\n- 실제 시험 ; 목차와 출제된 문제와의 긴밀한 연관성은 없었음/ 어떤 방식이든, 자기만의 방식대로 전반을 아우르는 중요한 내용들을 외우면 답 가능했음\n현실적으로, 다 볼 수가 없었습니다.\n결론 : “1차, 2차 SBT, 2차 구술” 시험을 나눠서 대비할 필요 없음.\n“시험대비가아닌, 정형외과 공부” 를 목표로 하자, 기출 위주의 주요질환들 세부적인 ‘중요내용’까지아울러서공부!!!\n@ 중요내용이란?\n- 내 주관 개입 지양 (내가 중요하다고 생각이 드는 부분은, 나한테만 흥미로울뿐이지 중요한 내용이 아닐수도 있다.)\n- “평소 과장님들께서 질문하셨던 것들, 연수강좌 때 강조했던 부분들, 최근 학회에 자주 거론되는 trend” 가 중요하다.",question_images:["images/2026_q36.png"],explanation_images:["images/2026_e36.png"]}
+  /* ===== 2026 해설정리 — 2026년 전문의 시험.pdf: 문제/해설 분리 크롭, 분야별 ===== */
+  {num:1,section:"2026 해설정리",chapter:"총론",question:"",choices:["","","","",""],answer:4,explanation:"",question_images:["images/2026_q1.png"],explanation_images:["images/2026_e1_1.png","images/2026_e1_2.png"]},
+  {num:2,section:"2026 해설정리",chapter:"총론",question:"",choices:["","","",""],answer:3,explanation:"",question_images:["images/2026_q2.png"],explanation_images:["images/2026_e2_1.png","images/2026_e2_2.png"]},
+  {num:3,section:"2026 해설정리",chapter:"총론",question:"",choices:["","","","",""],answer:1,explanation:"",question_images:["images/2026_q3.png"],explanation_images:["images/2026_e3_1.png","images/2026_e3_2.png"]},
+  {num:4,section:"2026 해설정리",chapter:"척추",question:"",choices:["","","","",""],answer:4,explanation:"",question_images:["images/2026_q4.png"],explanation_images:["images/2026_e4_1.png","images/2026_e4_2.png"]},
+  {num:5,section:"2026 해설정리",chapter:"슬관절",question:"",choices:["","","","",""],answer:1,explanation:"",question_images:["images/2026_q5.png"],explanation_images:["images/2026_e5_1.png","images/2026_e5_2.png"]},
+  {num:6,section:"2026 해설정리",chapter:"고관절",question:"",choices:["","","","",""],answer:2,explanation:"",question_images:["images/2026_q6.png"],explanation_images:["images/2026_e6_1.png","images/2026_e6_2.png"]},
+  {num:7,section:"2026 해설정리",chapter:"고관절",question:"",choices:["","","","",""],answer:1,explanation:"",question_images:["images/2026_q7.png"],explanation_images:["images/2026_e7.png"]},
+  {num:8,section:"2026 해설정리",chapter:"고관절",question:"",choices:["","","","",""],answer:4,explanation:"",question_images:["images/2026_q8.png"],explanation_images:["images/2026_e8_1.png","images/2026_e8_2.png"]},
+  {num:9,section:"2026 해설정리",chapter:"외상",question:"",choices:["","","","",""],answer:1,explanation:"",question_images:["images/2026_q9.png"],explanation_images:["images/2026_e9_1.png","images/2026_e9_2.png"]},
+  {num:10,section:"2026 해설정리",chapter:"고관절",question:"",choices:["","","",""],answer:4,explanation:"",question_images:["images/2026_q10.png"],explanation_images:["images/2026_e10_1.png","images/2026_e10_2.png"]},
+  {num:11,section:"2026 해설정리",chapter:"슬관절",question:"",choices:["","","","",""],answer:1,explanation:"",question_images:["images/2026_q11.png"],explanation_images:["images/2026_e11_1.png","images/2026_e11_2.png"]},
+  {num:12,section:"2026 해설정리",chapter:"척추",question:"",choices:["","","","",""],answer:2,explanation:"",question_images:["images/2026_q12.png"],explanation_images:["images/2026_e12.png"]},
+  {num:13,section:"2026 해설정리",chapter:"소아",question:"",choices:["","","","",""],answer:3,explanation:"",question_images:["images/2026_q13.png"],explanation_images:["images/2026_e13_1.png","images/2026_e13_2.png"]},
+  {num:14,section:"2026 해설정리",chapter:"견주관절",question:"",choices:["","","","",""],answer:3,explanation:"",question_images:["images/2026_q14.png"],explanation_images:["images/2026_e14.png"]},
+  {num:15,section:"2026 해설정리",chapter:"견주관절",question:"",choices:["","","","",""],answer:1,explanation:"",question_images:["images/2026_q15.png"],explanation_images:["images/2026_e15.png"]},
+  {num:16,section:"2026 해설정리",chapter:"견주관절",question:"",choices:["","","","",""],answer:2,explanation:"",question_images:["images/2026_q16.png"],explanation_images:["images/2026_e16.png"]},
+  {num:17,section:"2026 해설정리",chapter:"견주관절",question:"",choices:["","","","",""],answer:4,explanation:"",question_images:["images/2026_q17.png"],explanation_images:["images/2026_e17.png"]},
+  {num:18,section:"2026 해설정리",chapter:"외상",question:"",choices:["","","","",""],answer:4,explanation:"",question_images:["images/2026_q18.png"],explanation_images:["images/2026_e18_1.png","images/2026_e18_2.png"]},
+  {num:19,section:"2026 해설정리",chapter:"외상",question:"",choices:["","","","",""],answer:2,explanation:"",question_images:["images/2026_q19.png"],explanation_images:["images/2026_e19.png"]},
+  {num:20,section:"2026 해설정리",chapter:"족부족관절",question:"",choices:["","","","",""],answer:2,explanation:"",question_images:["images/2026_q20.png"],explanation_images:["images/2026_e20_1.png","images/2026_e20_2.png"]},
+  {num:21,section:"2026 해설정리",chapter:"족부족관절",question:"",choices:["","","","",""],answer:4,explanation:"",question_images:["images/2026_q21.png"],explanation_images:["images/2026_e21.png"]},
+  {num:22,section:"2026 해설정리",chapter:"족부족관절",question:"",choices:["","","","",""],answer:5,explanation:"",question_images:["images/2026_q22.png"],explanation_images:["images/2026_e22.png"]},
+  {num:23,section:"2026 해설정리",chapter:"소아",question:"",choices:["","","","",""],answer:3,explanation:"",question_images:["images/2026_q23.png"],explanation_images:["images/2026_e23_1.png","images/2026_e23_2.png"]},
+  {num:24,section:"2026 해설정리",chapter:"소아",question:"",choices:["","","","",""],answer:3,explanation:"",question_images:["images/2026_q24.png"],explanation_images:["images/2026_e24_1.png","images/2026_e24_2.png"]}
 ];
 </script>
 
@@ -1562,7 +1548,7 @@ const SECTION_DEFS=[
   {name:"2024년 2차",icon:"📕",file:"2024년 2차.pdf"},
   {name:"2025 인트레이닝",icon:"📙",file:"2025 인트레이닝 복원.pdf"},
   {name:"2025년 1차 기출",icon:"📒",file:"2025 전문의 1차 기출.docx"},
-  {name:"2026 해설정리",icon:"📝",file:"2026 전문의 시험 해설정리.pptx"}
+  {name:"2026 해설정리",icon:"📝",file:"2026년 전문의 시험.pdf"}
 ];
 const SECTIONS=SECTION_DEFS.map(s=>({...s,questions:QUESTIONS.filter(q=>q.section===s.name)}));
 
@@ -1575,7 +1561,7 @@ let examQuestions=[],examIdx=0,examAnswers={},examStartTs=0,examTimerId=null,exa
 
 function escapeHtml(t){const d=document.createElement('div');d.textContent=t==null?'':t;return d.innerHTML;}
 function timeAgo(ts){const d=Date.now()-ts,s=Math.floor(d/1000);if(s<60)return'방금 전';const m=Math.floor(s/60);if(m<60)return m+'분 전';const h=Math.floor(m/60);if(h<24)return h+'시간 전';const dy=Math.floor(h/24);if(dy<30)return dy+'일 전';return new Date(ts).toLocaleDateString('ko-KR');}
-function getQKey(q){return q.section+'_'+(q.chapter||'')+'_'+q.num;}
+function getQKey(q){if(!q)return '';return q.section+'_'+(q.chapter||'')+'_'+q.num;}
 
 function migrateAnswerData(){let changed=0;const qMap={};QUESTIONS.forEach(q=>{qMap[getQKey(q)]=q;});Object.keys(answerData).forEach(k=>{const q=qMap[k];if(!q)return;const a=answerData[k];const qAns=parseInt(q.answer,10);const shouldBeCorrect=a.selected===qAns;if(a.correct!==shouldBeCorrect){a.correct=shouldBeCorrect;changed++;}});if(changed>0)syncToCloud();return changed;}
 
@@ -2217,7 +2203,7 @@ function submitExam(auto){
   stopExamTimer();
   let correct=0;const wrong=[],perSection={};
   examQuestions.forEach((q,i)=>{const sel=examAnswers[i]||null,ans=parseInt(q.answer,10),ok=sel===ans,sn=q.section;if(!perSection[sn])perSection[sn]={total:0,correct:0};perSection[sn].total++;if(ok){correct++;perSection[sn].correct++;}else{wrong.push({qKey:getQKey(q),section:q.section,num:q.num,sel:sel,ans:ans});}});
-  const items=examQuestions.map((q,i)=>({qKey:getQKey(q),sel:examAnswers[i]||null}));
+  const items=examQuestions.map((q,i)=>({qKey:getQKey(q),sel:examAnswers[i]||null,section:q.section,num:q.num}));
   const res={id:Date.now(),date:Date.now(),total:total,correct:correct,timeSec:Math.floor((Date.now()-examStartTs)/1000),sections:examConfig.sections.slice(),perSection:perSection,wrong:wrong,items:items};
   examHistory.unshift(res);if(examHistory.length>30)examHistory=examHistory.slice(0,30);syncToCloud();
   if(total&&correct/total>=0.6)launchConfetti();
@@ -2250,26 +2236,37 @@ function clearExamHistory(){if(!examHistory.length)return;if(!confirm('모든 �
 function openExamResult(id){const res=examHistory.find(r=>r.id===id);if(!res)return;_examShow();document.getElementById('headerTitle').textContent='📝 모의고사 결과';renderExamResult(res);document.getElementById('contentArea').scrollTop=0;}
 
 /* ---------- 모의고사 풀이 다시보기 ---------- */
-function _examItems(res){return (res.items&&res.items.length)?res.items:((res.wrong||[]).map(w=>({qKey:w.qKey,sel:w.sel})));}
-function startExamReview(id,idx){const res=examHistory.find(r=>r.id===id);if(!res)return;_examShow();document.getElementById('headerTitle').textContent='📖 모의고사 다시보기';renderExamReview(res,idx||0);document.getElementById('contentArea').scrollTop=0;}
+function _examItems(res){return (res.items&&res.items.length)?res.items:((res.wrong||[]).map(w=>({qKey:w.qKey,sel:w.sel,section:w.section,num:w.num})));}
+/* qKey(섹션_분야_번호)에서 섹션·번호 복원 — 섹션/분야명엔 '_'가 없다는 전제 */
+function _parseQKey(k){k=String(k||'');const li=k.lastIndexOf('_');if(li<0)return{section:'',num:k};const num=k.slice(li+1);const rest=k.slice(0,li);const fi=rest.indexOf('_');return{section:fi>=0?rest.slice(0,fi):rest,num:num};}
+/* 다시보기용 문제 조회 — 섹션 재빌드로 분야/번호가 바뀌어 qKey가 달라져도 섹션+번호로 강인하게 찾음 */
+function _findReviewQ(it){
+  if(!it)return null;
+  let q=QUESTIONS.find(x=>getQKey(x)===it.qKey);if(q)return q;
+  let sec=(it.section!=null)?it.section:null,num=(it.num!=null)?it.num:null;
+  if(sec==null||num==null){const pp=_parseQKey(it.qKey);if(sec==null)sec=pp.section;if(num==null)num=pp.num;}
+  if(sec&&num!=null){q=QUESTIONS.find(x=>x.section===sec&&String(x.num)===String(num));if(q)return q;}
+  return null;
+}
+function startExamReview(id,idx){const res=examHistory.find(r=>r.id===id);if(!res)return;_examShow();document.getElementById('headerTitle').textContent='📖 모의고사 다시보기';try{renderExamReview(res,idx||0);}catch(e){console.error('[examReview] 렌더 실패:',e);openExamResult(id);return;}document.getElementById('contentArea').scrollTop=0;}
 function renderExamReview(res,idx){
-  const items=_examItems(res);const total=items.length;if(!total){openExamResult(res.id);return;}
+  const items=_examItems(res);const total=items.length;const c=document.getElementById('examContainer');
+  if(!total){c.innerHTML='<div class="exam-wrap"><div class="exam-topbar"><button class="et-submit" style="background:#fff;color:var(--text2);border:1px solid var(--border2)" onclick="openExamResult('+res.id+')">← 결과</button></div><div class="empty-state"><div class="es-icon">🗂️</div><p>이 기록에는 다시 볼 문제 데이터가 없습니다.<br><span style="font-size:12px;color:var(--text3)">(예전 방식으로 저장되어 푼 문제 목록이 없는 기록이에요)</span></p></div></div>';return;}
   if(idx<0)idx=0;if(idx>=total)idx=total-1;
-  const it=items[idx];const q=QUESTIONS.find(qq=>getQKey(qq)===it.qKey);
-  const c=document.getElementById('examContainer');
+  const it=items[idx];const q=_findReviewQ(it);
   let h='<div class="exam-wrap">';
   h+='<div class="exam-topbar"><button class="et-submit" style="background:#fff;color:var(--text2);border:1px solid var(--border2)" onclick="openExamResult('+res.id+')">← 결과</button><div class="et-prog">다시보기 '+(idx+1)+' / '+total+'</div></div>';
   h+='<div class="exam-omr">';
-  items.forEach((iit,i)=>{const qq=QUESTIONS.find(x=>getQKey(x)===iit.qKey);const ok=qq&&iit.sel&&iit.sel===parseInt(qq.answer,10);let st='';if(iit.sel)st=ok?'background:var(--correct-bg);border-color:var(--correct);color:var(--correct)':'background:var(--wrong-bg);border-color:var(--wrong);color:var(--wrong)';h+='<button class="omr-cell'+(i===idx?' current':'')+'" style="'+st+'" onclick="startExamReview('+res.id+','+i+')">'+(i+1)+'</button>';});
+  items.forEach((iit,i)=>{const qq=_findReviewQ(iit);const ok=qq&&iit.sel&&iit.sel===parseInt(qq.answer,10);let st='';if(iit.sel)st=ok?'background:var(--correct-bg);border-color:var(--correct);color:var(--correct)':'background:var(--wrong-bg);border-color:var(--wrong);color:var(--wrong)';h+='<button class="omr-cell'+(i===idx?' current':'')+'" style="'+st+'" onclick="startExamReview('+res.id+','+i+')">'+(i+1)+'</button>';});
   h+='</div>';
-  if(!q){h+='<div class="empty-state"><div class="es-icon">❓</div><p>이 문제 데이터를 찾을 수 없습니다.</p></div></div>';c.innerHTML=h;return;}
+  if(!q){const pp=_parseQKey(it.qKey);const sec=(it.section!=null?it.section:pp.section)||'';const num=(it.num!=null?it.num:pp.num);h+='<div class="empty-state"><div class="es-icon">❓</div><p>'+(sec?escapeHtml(sec)+' ':'')+(num!=null&&num!==''?'Q'+escapeHtml(String(num)):'이 문제')+' 데이터를 찾을 수 없습니다.<br><span style="font-size:12px;color:var(--text3)">문제가 새로 정리되어 번호가 바뀌었을 수 있어요 · 내 답: '+(it.sel?it.sel+'번':'미응답')+'</span></p></div>';h+='<div class="quiz-nav"><button onclick="startExamReview('+res.id+','+(idx-1)+')"'+(idx===0?' disabled style="opacity:.4"':'')+'>← 이전</button>';h+=(idx<total-1)?'<button class="primary" onclick="startExamReview('+res.id+','+(idx+1)+')">다음 →</button>':'<button class="primary" onclick="openExamResult('+res.id+')">결과로 →</button>';h+='</div></div>';c.innerHTML=h;return;}
   const ans=parseInt(q.answer,10);const ok=it.sel===ans;
   h+='<div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">원본 Q'+q.num+'</div>';
   h+='<span style="margin-left:auto;padding:3px 11px;border-radius:12px;font-size:11.5px;font-weight:800;'+(it.sel?(ok?'background:var(--correct-bg);color:var(--correct)':'background:var(--wrong-bg);color:var(--wrong)'):'background:var(--mint2);color:var(--text2)')+'">'+(it.sel?(ok?'✅ 정답':'❌ 오답'):'⬜ 미응답')+'</span></div>';
   h+='<div class="quiz-question">'+escapeHtml(q.question);
   if(q.question_images&&q.question_images.length)q.question_images.forEach(img=>{h+='<br><img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});
   h+='</div><div class="quiz-choices">';
-  q.choices.forEach((ch,i)=>{const n=i+1;let cls='choice-btn disabled';if(n===ans)cls+=' correct';else if(n===it.sel)cls+=' wrong';else cls+=' dimmed';h+='<button class="'+cls+'"><span class="choice-num">'+n+'</span><span class="choice-text">'+escapeHtml(ch)+'</span></button>';});
+  (q.choices||[]).forEach((ch,i)=>{const n=i+1;let cls='choice-btn disabled';if(n===ans)cls+=' correct';else if(n===it.sel)cls+=' wrong';else cls+=' dimmed';h+='<button class="'+cls+'"><span class="choice-num">'+n+'</span><span class="choice-text">'+escapeHtml(ch)+'</span></button>';});
   h+='</div>';
   h+='<div style="font-size:12.5px;color:var(--text2);font-weight:700;margin:2px 0 12px">내 답: '+(it.sel?it.sel+'번':'미응답')+' · 정답: '+ans+'번</div>';
   if(q.explanation||q.reference||(q.explanation_images&&q.explanation_images.length)){
