@@ -785,7 +785,18 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .practice-bar .pb-exit:hover{background:rgba(255,255,255,.32)}
 .pt-toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(12px);background:#0e1813;color:#eaf7d8;padding:11px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:99997;box-shadow:0 12px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;border:1px solid rgba(184,242,74,.34)}
 .pt-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:768px){.pt-toast{bottom:185px}}
+.resume-banner{width:100%;display:flex;align-items:center;gap:13px;padding:13px 16px;margin-bottom:16px;border-radius:16px;border:1px solid var(--lime-line);background:linear-gradient(135deg,#0e1c14,#13261a);color:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:all .18s;box-shadow:0 10px 28px -14px rgba(127,190,31,.55)}
+.resume-banner:hover{transform:translateY(-2px);border-color:var(--lime);box-shadow:0 14px 34px -12px rgba(184,242,74,.5)}
+.resume-banner .rb-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(184,242,74,.16);flex-shrink:0}
+.resume-banner .rb-body{flex:1;min-width:0}
+.resume-banner .rb-tt{font-size:13.5px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px}
+.resume-banner .rb-sub{font-size:12px;color:var(--lime);font-weight:700;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resume-banner .rb-badge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:7px}
+.resume-banner .rb-badge.ok{background:rgba(33,168,78,.22);color:#7ee2a0}
+.resume-banner .rb-badge.no{background:rgba(207,83,70,.22);color:#f0a59c}
+.resume-banner .rb-badge.new{background:rgba(184,242,74,.18);color:var(--lime)}
+.resume-banner .rb-go{flex-shrink:0;background:linear-gradient(135deg,var(--lime),var(--lime2));color:var(--ink);font-size:12.5px;font-weight:800;padding:9px 14px;border-radius:10px;white-space:nowrap}
+@media(max-width:768px){.pt-toast{bottom:185px}.resume-banner .rb-go{padding:8px 11px;font-size:12px}}
 
 /* ===================================================================
    📱 모바일 셸 레이아웃 복구 (반드시 스타일 맨 끝 — 소스 순서로 우선권 확보)
@@ -871,7 +882,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260602-1729';
+const APP_VERSION='20260602-1738';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -1972,6 +1983,7 @@ function openLightbox(src){const lb=document.createElement('div');lb.className='
 function loadQuestion(q,keepPractice){
   if(!keepPractice)practiceSet=null;
   currentQ=q;currentQIdx=QUESTIONS.indexOf(q);viewMode='quiz';pendingMemoImg=null;pendingExplImg=null;explEditOpen=false;editingExplId=null;
+  saveLastPos(q);
   const k=getQKey(q);
   if(!viewData[k])viewData[k]={count:0,lastViewed:0};
   viewData[k].count++;viewData[k].lastViewed=Date.now();syncToCloud();
@@ -2302,6 +2314,8 @@ function renderDashboard(){
   const td=studyLog[todayStr()],todaySolved=td?td.solved:0;
   const goalPct=dailyGoal?Math.min(100,Math.round(todaySolved/dailyGoal*100)):0;
   let h='<div id="dashView" class="dash">';
+  /* 📍 이어서 풀던 문제 복귀 배너 */
+  h+=resumeBannerHtml();
   /* hero */
   h+='<div class="dash-hero"><div class="dh-hi">반가워요 👋 합격까지 한 걸음씩</div><div class="dh-title">오늘의 학습 ☕</div>';
   h+='<div class="dh-row">';
@@ -2352,6 +2366,30 @@ function renderDashboard(){
 }
 function editGoal(){const v=prompt('하루 목표 문제 수를 입력하세요',dailyGoal);if(v==null)return;const n=parseInt(v,10);if(!n||n<1){alert('1 이상의 숫자를 입력하세요');return;}dailyGoal=n;syncToCloud();renderDashboard();}
 function continueStudy(){const realQs=QUESTIONS.filter(q=>q.section!=='📖 사용법');const next=realQs.find(q=>!answerData[getQKey(q)]);if(!next){alert('모든 문제를 풀었어요! 🎉 오답·반복 복습을 추천합니다.');return;}const si=SECTIONS.findIndex(s=>s.name===next.section);if(si>=0)currentSectionIdx=si;loadQuestion(next);}
+/* 📍 마지막에 풀던 문제 복귀 — loadQuestion마다 위치 저장, 대시보드 배너로 한 번에 돌아가기 */
+function saveLastPos(q){try{localStorage.setItem(PREFIX+'_lastpos',JSON.stringify({section:q.section,num:q.num,genre:practiceSet?practiceSet.genre:null,ts:Date.now()}));}catch(e){}}
+function getLastPos(){try{return JSON.parse(localStorage.getItem(PREFIX+'_lastpos')||'null');}catch(e){return null;}}
+function resumeBannerHtml(){
+  const pos=getLastPos();if(!pos)return'';
+  const q=QUESTIONS.find(x=>x.section===pos.section&&String(x.num)===String(pos.num));if(!q)return'';
+  const a=answerData[getQKey(q)];const badge=a?(a.correct?'<span class="rb-badge ok">✓ 정답</span>':'<span class="rb-badge no">✗ 오답</span>'):'<span class="rb-badge new">미풀이</span>';
+  const label=(pos.genre?'🎯 '+escapeHtml(pos.genre)+' · ':'')+escapeHtml(q.section)+' '+q.num+'번';
+  return '<button class="resume-banner" onclick="resumeLastPos()"><div class="rb-ico">📍</div><div class="rb-body"><div class="rb-tt">이어서 풀던 문제로 돌아가기 '+badge+'</div><div class="rb-sub">'+label+'</div></div><div class="rb-go">이어서 →</div></button>';
+}
+function resumeLastPos(){
+  const pos=getLastPos();if(!pos)return;
+  const q=QUESTIONS.find(x=>x.section===pos.section&&String(x.num)===String(pos.num));
+  if(!q){alert('마지막에 풀던 문제를 찾을 수 없습니다.');return;}
+  if(pos.genre&&normChapter(q.chapter)===pos.genre){
+    const qs=QUESTIONS.filter(x=>normChapter(x.chapter)===pos.genre&&x.choices&&x.choices.length>0);
+    qs.sort((a,b)=>{const sa=answerData[getQKey(a)]?1:0,sb=answerData[getQKey(b)]?1:0;return sa-sb;});
+    practiceSet={name:pos.genre,genre:pos.genre,questions:qs};
+    loadQuestion(q,true);
+  }else{
+    const si=SECTIONS.findIndex(s=>s.name===q.section);if(si>=0)currentSectionIdx=si;
+    loadQuestion(q);
+  }
+}
 
 /* ---------- 니모닉 (암기법) ---------- */
 function mnemSectionHtml(q){
