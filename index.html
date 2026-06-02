@@ -760,16 +760,17 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .chap-badge{display:inline-block;background:#cdeaa8;color:#2c4a16;border-radius:7px;padding:1px 7px;font-size:9.5px;font-weight:800;margin-right:5px;vertical-align:middle}
 ::selection{background:rgba(184,242,74,.28)}
 
-/* ===== 🎯 주제별 문제풀이 (문제지 하단 셀렉터 + 풀이모드 바 + 토스트) ===== */
-.topic-practice{margin-top:30px;padding:20px 20px 22px;border-radius:18px;background:linear-gradient(135deg,var(--mint),#fff 72%);border:1px solid var(--mint3);box-shadow:var(--shadow-sm)}
-.topic-practice h3{font-size:16px;font-weight:800;color:var(--heading1);display:flex;align-items:center;gap:8px;margin-bottom:5px;font-family:var(--serif)}
-.topic-practice .tp-sub{font-size:12.5px;color:var(--text2);margin-bottom:16px;line-height:1.55}
-.tp-chips{display:flex;flex-wrap:wrap;gap:10px}
-.tp-chip{display:inline-flex;align-items:center;gap:7px;padding:11px 15px;border-radius:13px;border:1px solid var(--border2);background:#fff;color:var(--heading2);font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .16s;box-shadow:var(--shadow-sm)}
-.tp-chip .tp-ico{font-size:16px}
-.tp-chip .tp-cnt{font-size:11px;font-weight:800;color:var(--accent-deep);background:var(--accent-soft);padding:2px 8px;border-radius:9px}
-.tp-chip:hover{border-color:var(--lime-deep);color:var(--lime-deep);transform:translateY(-2px);box-shadow:0 9px 20px -10px rgba(127,190,31,.45)}
-.tp-chip:hover .tp-cnt{background:var(--lime-soft);color:var(--lime-deep)}
+/* ===== 🎯 주제별 문제풀이 (사이드바 단원 칩 + 풀이모드 바 + 토스트) ===== */
+.sb-topic{margin:8px 0 4px;padding:13px 2px 6px;border-top:1px solid var(--shell-bd)}
+.sb-topic-head{font-size:12px;font-weight:800;color:var(--shell-tx);padding:0 6px 2px;display:flex;align-items:center;gap:6px;letter-spacing:.2px}
+.sb-topic-sub{font-size:10px;color:var(--shell-tx3);padding:0 6px 9px;font-weight:600;line-height:1.4}
+.sb-topic-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 2px}
+.sb-topic-chip{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border-radius:10px;border:1px solid var(--shell-bd);background:var(--shell-card);color:var(--shell-tx);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.sb-topic-chip .sbt-ico{font-size:13px}
+.sb-topic-chip .sbt-cnt{font-size:9.5px;font-weight:800;color:var(--lime);background:var(--lime-soft);padding:1px 6px;border-radius:7px}
+.sb-topic-chip:hover{border-color:var(--lime-line);background:var(--shell-card2);color:var(--lime);transform:translateY(-1px)}
+.sb-topic-chip.active{background:linear-gradient(135deg,var(--lime),var(--lime2));color:var(--ink);border-color:var(--lime)}
+.sb-topic-chip.active .sbt-cnt{background:rgba(14,24,19,.18);color:var(--ink)}
 .practice-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;margin-bottom:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent-deep),var(--accent));color:#fff;font-size:13px;font-weight:700;box-shadow:0 8px 20px -12px var(--accent)}
 .practice-bar .pb-ico{font-size:16px}
 .practice-bar .pb-prog{margin-left:7px;background:rgba(255,255,255,.22);padding:2px 10px;border-radius:9px;font-size:12px;font-weight:800}
@@ -777,7 +778,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .practice-bar .pb-exit:hover{background:rgba(255,255,255,.32)}
 .pt-toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(12px);background:#0e1813;color:#eaf7d8;padding:11px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:99997;box-shadow:0 12px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;border:1px solid rgba(184,242,74,.34)}
 .pt-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:768px){.topic-practice{margin-top:24px;padding:16px 15px 18px}.tp-chip{padding:10px 13px;font-size:13px}.pt-toast{bottom:150px}}
+@media(max-width:768px){.pt-toast{bottom:150px}}
 
 /* ===================================================================
    📱 모바일 셸 레이아웃 복구 (반드시 스타일 맨 끝 — 소스 순서로 우선권 확보)
@@ -863,7 +864,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260602-1630';
+const APP_VERSION='20260602-1646';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -1828,6 +1829,16 @@ function buildBookList(){
     item.innerHTML='<div class="book-icon">'+sec.icon+'</div><div class="book-title">'+sec.name+'</div><div class="book-stats">'+stats+'</div>'+(qs.length?'<div class="book-progress"><div class="book-progress-bar" style="width:'+pct+'%"></div></div>':'');
     list.appendChild(item);
   });
+  // 🎯 주제별 문제풀이 — 시험 목록(2026 전문의 시험) 아래에 단원 칩
+  const genres=examGenres();
+  if(genres.length){
+    const wrap=document.createElement('div');wrap.className='sb-topic';
+    let th='<div class="sb-topic-head">🎯 주제별 문제풀이</div><div class="sb-topic-sub">단원 선택 → 즉시 채점·자동 오답노트</div><div class="sb-topic-chips">';
+    genres.forEach(g=>{const ic=CHAPTER_ICON[g.genre]||'🧩';const act=practiceSet&&practiceSet.genre===g.genre?' active':'';th+='<button class="sb-topic-chip'+act+'" onclick="startTopicPractice(\''+String(g.genre).replace(/\x27/g,"\\\x27")+'\')"><span class="sbt-ico">'+ic+'</span><span class="sbt-name">'+escapeHtml(g.genre)+'</span><span class="sbt-cnt">'+g.withChoices+'</span></button>';});
+    th+='</div>';
+    wrap.innerHTML=th;
+    list.appendChild(wrap);
+  }
 }
 
 function showGrid(si){
@@ -1883,17 +1894,8 @@ function renderGrid(si){
       h+='</div></div>';
     }
   }
-  h+=topicPracticeHtml();
   h+='</div>';
   document.getElementById('gridContainer').innerHTML=h;
-}
-function topicPracticeHtml(){
-  const genres=examGenres();
-  if(!genres.length)return'';
-  let h='<div class="topic-practice"><h3>🎯 주제별 문제풀이</h3><div class="tp-sub">풀고 싶은 주제를 고르면 전체 문제은행에서 그 분야만 모아 바로 풀이 모드로 풀 수 있어요. 답은 즉시 확인되고, 틀린 문제는 자동으로 ❌ 오답노트에 들어갑니다.</div><div class="tp-chips">';
-  genres.forEach(g=>{const ic=CHAPTER_ICON[g.genre]||'🧩';h+='<button class="tp-chip" onclick="startTopicPractice(\''+String(g.genre).replace(/\x27/g,"\\\x27")+'\')"><span class="tp-ico">'+ic+'</span><span>'+escapeHtml(g.genre)+'</span><span class="tp-cnt">'+g.withChoices+'</span></button>';});
-  h+='</div></div>';
-  return h;
 }
 function qCardHtml(q,si,qi){
   const k=getQKey(q),a=answerData[k],v=viewData[k];
