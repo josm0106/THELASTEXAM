@@ -760,17 +760,24 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .chap-badge{display:inline-block;background:#cdeaa8;color:#2c4a16;border-radius:7px;padding:1px 7px;font-size:9.5px;font-weight:800;margin-right:5px;vertical-align:middle}
 ::selection{background:rgba(184,242,74,.28)}
 
-/* ===== 🎯 주제별 문제풀이 (사이드바 단원 칩 + 풀이모드 바 + 토스트) ===== */
-.sb-topic{margin:8px 0 4px;padding:13px 2px 6px;border-top:1px solid var(--shell-bd)}
-.sb-topic-head{font-size:12px;font-weight:800;color:var(--shell-tx);padding:0 6px 2px;display:flex;align-items:center;gap:6px;letter-spacing:.2px}
-.sb-topic-sub{font-size:10px;color:var(--shell-tx3);padding:0 6px 9px;font-weight:600;line-height:1.4}
-.sb-topic-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 2px}
-.sb-topic-chip{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border-radius:10px;border:1px solid var(--shell-bd);background:var(--shell-card);color:var(--shell-tx);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-.sb-topic-chip .sbt-ico{font-size:13px}
-.sb-topic-chip .sbt-cnt{font-size:9.5px;font-weight:800;color:var(--lime);background:var(--lime-soft);padding:1px 6px;border-radius:7px}
-.sb-topic-chip:hover{border-color:var(--lime-line);background:var(--shell-card2);color:var(--lime);transform:translateY(-1px)}
-.sb-topic-chip.active{background:linear-gradient(135deg,var(--lime),var(--lime2));color:var(--ink);border-color:var(--lime)}
-.sb-topic-chip.active .sbt-cnt{background:rgba(14,24,19,.18);color:var(--ink)}
+/* ===== 🎯 주제별 문제풀이 (사이드바 단일 버튼 + 단원 선택 페이지 + 풀이모드 바 + 토스트) ===== */
+.sb-topic{margin:8px 0 2px;padding:11px 2px 2px;border-top:1px solid var(--shell-bd)}
+.sb-topic-btn{width:100%;display:flex;align-items:center;gap:9px;padding:12px 13px;border-radius:12px;border:1px solid var(--shell-bd);background:var(--shell-card);color:var(--shell-tx);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .16s}
+.sb-topic-btn .sbt-ico{font-size:16px}
+.sb-topic-btn .sbt-label{flex:1;text-align:left}
+.sb-topic-btn .sbt-arrow{font-size:17px;color:var(--shell-tx3);font-weight:700;line-height:1}
+.sb-topic-btn:hover{border-color:var(--lime-line);background:var(--shell-card2);color:var(--lime)}
+.sb-topic-btn:hover .sbt-arrow{color:var(--lime)}
+.sb-topic-btn.active{background:linear-gradient(135deg,var(--lime),var(--lime2));color:var(--ink);border-color:var(--lime);box-shadow:0 6px 16px -8px var(--lime-glow)}
+.sb-topic-btn.active .sbt-arrow{color:var(--ink)}
+.topic-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.topic-card{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 16px 14px;border-radius:16px;border:1px solid var(--border2);background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:all .16s;box-shadow:var(--shadow-sm)}
+.topic-card:hover{border-color:var(--lime-deep);transform:translateY(-3px);box-shadow:0 12px 26px -12px rgba(127,190,31,.5)}
+.topic-card .tc-ico{font-size:26px;margin-bottom:3px}
+.topic-card .tc-name{font-size:15px;font-weight:800;color:var(--heading1)}
+.topic-card .tc-meta{font-size:11.5px;color:var(--text2);font-weight:600}
+.topic-card .tc-bar{width:100%;height:5px;border-radius:3px;background:var(--mint2);overflow:hidden;margin-top:10px}
+.topic-card .tc-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .practice-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;margin-bottom:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent-deep),var(--accent));color:#fff;font-size:13px;font-weight:700;box-shadow:0 8px 20px -12px var(--accent)}
 .practice-bar .pb-ico{font-size:16px}
 .practice-bar .pb-prog{margin-left:7px;background:rgba(255,255,255,.22);padding:2px 10px;border-radius:9px;font-size:12px;font-weight:800}
@@ -864,7 +871,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260602-1646';
+const APP_VERSION='20260602-1708';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -1829,14 +1836,11 @@ function buildBookList(){
     item.innerHTML='<div class="book-icon">'+sec.icon+'</div><div class="book-title">'+sec.name+'</div><div class="book-stats">'+stats+'</div>'+(qs.length?'<div class="book-progress"><div class="book-progress-bar" style="width:'+pct+'%"></div></div>':'');
     list.appendChild(item);
   });
-  // 🎯 주제별 문제풀이 — 시험 목록(2026 전문의 시험) 아래에 단원 칩
-  const genres=examGenres();
-  if(genres.length){
+  // 🎯 주제별 문제풀이 — 시험 목록 아래 단일 버튼(클릭 시 단원 선택 페이지)
+  if(examGenres().length){
     const wrap=document.createElement('div');wrap.className='sb-topic';
-    let th='<div class="sb-topic-head">🎯 주제별 문제풀이</div><div class="sb-topic-sub">단원 선택 → 즉시 채점·자동 오답노트</div><div class="sb-topic-chips">';
-    genres.forEach(g=>{const ic=CHAPTER_ICON[g.genre]||'🧩';const act=practiceSet&&practiceSet.genre===g.genre?' active':'';th+='<button class="sb-topic-chip'+act+'" onclick="startTopicPractice(\''+String(g.genre).replace(/\x27/g,"\\\x27")+'\')"><span class="sbt-ico">'+ic+'</span><span class="sbt-name">'+escapeHtml(g.genre)+'</span><span class="sbt-cnt">'+g.withChoices+'</span></button>';});
-    th+='</div>';
-    wrap.innerHTML=th;
+    const act=(viewMode==='topicselect'||practiceSet)?' active':'';
+    wrap.innerHTML='<button class="sb-topic-btn'+act+'" onclick="openTopicSelect()"><span class="sbt-ico">🎯</span><span class="sbt-label">주제별 문제풀이</span><span class="sbt-arrow">›</span></button>';
     list.appendChild(wrap);
   }
 }
@@ -1917,9 +1921,35 @@ function gridFilter(mode,btn){
 }
 
 function goBack(){
-  if(practiceSet){const si=currentSectionIdx;practiceSet=null;if(si>=0)showGrid(si);else goHome();return;}
+  if(practiceSet){practiceSet=null;openTopicSelect();return;}
+  if(viewMode==='topicselect'){goHome();return;}
   if(viewMode==='quiz'&&currentSectionIdx>=0){showGrid(currentSectionIdx);}
   else{goHome();}
+}
+function openTopicSelect(){
+  practiceSet=null;currentSectionIdx=-1;viewMode='topicselect';currentQ=null;stopExamTimer();setNav(null);
+  ['welcomeScreen','quizContainer','flashContainer','examContainer'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  document.getElementById('gridContainer').style.display='block';
+  document.getElementById('backBtn').style.display='inline-block';
+  document.getElementById('headerTitle').textContent='🎯 주제별 문제풀이';
+  document.getElementById('headerProgress').textContent='';
+  if(window.innerWidth<=768)closeSidebarMobile();
+  renderTopicSelect();buildBookList();
+  document.getElementById('contentArea').scrollTop=0;
+}
+function renderTopicSelect(){
+  const genres=examGenres();
+  let h='<div class="grid-view"><h2>🎯 주제별 문제풀이</h2><div class="grid-sub">풀고 싶은 단원을 선택하면 전체 문제은행에서 그 분야만 모아 바로 풀이 모드로 풀 수 있어요. 답은 즉시 확인되고, 틀린 문제는 자동으로 ❌ 오답노트에 들어갑니다.</div><div class="topic-cards">';
+  genres.forEach(g=>{
+    const ic=CHAPTER_ICON[g.genre]||'🧩';
+    const gq=QUESTIONS.filter(q=>normChapter(q.chapter)===g.genre&&q.choices&&q.choices.length>0);
+    const done=gq.filter(q=>answerData[getQKey(q)]).length;
+    const wrong=gq.filter(q=>{const a=answerData[getQKey(q)];return a&&!a.correct;}).length;
+    const pct=gq.length?Math.round(done/gq.length*100):0;
+    h+='<button class="topic-card" onclick="startTopicPractice(\''+String(g.genre).replace(/\x27/g,"\\\x27")+'\')"><div class="tc-ico">'+ic+'</div><div class="tc-name">'+escapeHtml(g.genre)+'</div><div class="tc-meta">'+g.withChoices+'문제 · '+done+' 푼'+(wrong?' · <span style="color:var(--wrong)">✗'+wrong+'</span>':'')+'</div><div class="tc-bar"><div class="tc-bar-fill" style="width:'+pct+'%"></div></div></button>';
+  });
+  h+='</div></div>';
+  document.getElementById('gridContainer').innerHTML=h;
 }
 function startTopicPractice(genre){
   const qs=QUESTIONS.filter(q=>normChapter(q.chapter)===genre&&q.choices&&q.choices.length>0);
@@ -1994,7 +2024,7 @@ function renderQuiz(){
     h+='<div class="quiz-nav">';
     h+='<div style="display:flex;gap:10px;flex-wrap:wrap">';
     if(qi>0)h+='<button onclick="practiceNav('+(qi-1)+')">← 이전</button>';
-    h+='<button class="qnav-list" onclick="goBack()">📋 주제목록</button>';
+    h+='<button class="qnav-list" onclick="goBack()">🎯 주제 선택</button>';
     h+='</div>';
     if(qi<list.length-1)h+='<button class="primary" onclick="practiceNav('+(qi+1)+')">다음 →</button>';else h+='<button class="primary" onclick="goBack()">✓ 완료</button>';
     h+='</div>';
