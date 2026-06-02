@@ -760,6 +760,25 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .chap-badge{display:inline-block;background:#cdeaa8;color:#2c4a16;border-radius:7px;padding:1px 7px;font-size:9.5px;font-weight:800;margin-right:5px;vertical-align:middle}
 ::selection{background:rgba(184,242,74,.28)}
 
+/* ===== 🎯 주제별 문제풀이 (문제지 하단 셀렉터 + 풀이모드 바 + 토스트) ===== */
+.topic-practice{margin-top:30px;padding:20px 20px 22px;border-radius:18px;background:linear-gradient(135deg,var(--mint),#fff 72%);border:1px solid var(--mint3);box-shadow:var(--shadow-sm)}
+.topic-practice h3{font-size:16px;font-weight:800;color:var(--heading1);display:flex;align-items:center;gap:8px;margin-bottom:5px;font-family:var(--serif)}
+.topic-practice .tp-sub{font-size:12.5px;color:var(--text2);margin-bottom:16px;line-height:1.55}
+.tp-chips{display:flex;flex-wrap:wrap;gap:10px}
+.tp-chip{display:inline-flex;align-items:center;gap:7px;padding:11px 15px;border-radius:13px;border:1px solid var(--border2);background:#fff;color:var(--heading2);font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .16s;box-shadow:var(--shadow-sm)}
+.tp-chip .tp-ico{font-size:16px}
+.tp-chip .tp-cnt{font-size:11px;font-weight:800;color:var(--accent-deep);background:var(--accent-soft);padding:2px 8px;border-radius:9px}
+.tp-chip:hover{border-color:var(--lime-deep);color:var(--lime-deep);transform:translateY(-2px);box-shadow:0 9px 20px -10px rgba(127,190,31,.45)}
+.tp-chip:hover .tp-cnt{background:var(--lime-soft);color:var(--lime-deep)}
+.practice-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;margin-bottom:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent-deep),var(--accent));color:#fff;font-size:13px;font-weight:700;box-shadow:0 8px 20px -12px var(--accent)}
+.practice-bar .pb-ico{font-size:16px}
+.practice-bar .pb-prog{margin-left:7px;background:rgba(255,255,255,.22);padding:2px 10px;border-radius:9px;font-size:12px;font-weight:800}
+.practice-bar .pb-exit{margin-left:auto;background:rgba(255,255,255,.16);border:none;color:#fff;font-size:12px;font-weight:700;padding:5px 11px;border-radius:9px;cursor:pointer;font-family:inherit;transition:background .15s}
+.practice-bar .pb-exit:hover{background:rgba(255,255,255,.32)}
+.pt-toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(12px);background:#0e1813;color:#eaf7d8;padding:11px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:99997;box-shadow:0 12px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;border:1px solid rgba(184,242,74,.34)}
+.pt-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:768px){.topic-practice{margin-top:24px;padding:16px 15px 18px}.tp-chip{padding:10px 13px;font-size:13px}.pt-toast{bottom:150px}}
+
 /* ===================================================================
    📱 모바일 셸 레이아웃 복구 (반드시 스타일 맨 끝 — 소스 순서로 우선권 확보)
    버그: AgrisAI 오버라이드 블록의 `.sidebar{...position:relative}`(미디어쿼리
@@ -844,7 +863,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260602-1551';
+const APP_VERSION='20260602-1630';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -1761,7 +1780,7 @@ const SECTION_DEFS=[
 const SECTIONS=SECTION_DEFS.map(s=>({...s,questions:QUESTIONS.filter(q=>q.section===s.name)}));
 
 let currentQ=null,currentQIdx=-1,currentSectionIdx=-1,wrongNotes=[],memoNotes=[],viewData={},answerData={},repeatMarks={},currentMemoTab='wrong',currentMemoFilter='all',appInitialized=false;
-let viewMode='welcome';
+let viewMode='welcome',practiceSet=null;
 /* ☕ 신규 기능 상태 */
 let mnemonics=[],studyLog={},examHistory=[],dailyGoal=20,pendingMemoImg=null,userExpl=[],pendingExplImg=null,explEditOpen=false,editingExplId=null;
 let flashDeck=[],flashIdx=0,flashFlipped=false,flashStudied=null,flashTitle='',flashTotal=0;
@@ -1812,7 +1831,7 @@ function buildBookList(){
 }
 
 function showGrid(si){
-  currentSectionIdx=si;viewMode='grid';currentQ=null;
+  currentSectionIdx=si;viewMode='grid';currentQ=null;practiceSet=null;
   document.getElementById('welcomeScreen').style.display='none';
   document.getElementById('quizContainer').style.display='none';
   document.getElementById('flashContainer').style.display='none';
@@ -1864,8 +1883,17 @@ function renderGrid(si){
       h+='</div></div>';
     }
   }
+  h+=topicPracticeHtml();
   h+='</div>';
   document.getElementById('gridContainer').innerHTML=h;
+}
+function topicPracticeHtml(){
+  const genres=examGenres();
+  if(!genres.length)return'';
+  let h='<div class="topic-practice"><h3>🎯 주제별 문제풀이</h3><div class="tp-sub">풀고 싶은 주제를 고르면 전체 문제은행에서 그 분야만 모아 바로 풀이 모드로 풀 수 있어요. 답은 즉시 확인되고, 틀린 문제는 자동으로 ❌ 오답노트에 들어갑니다.</div><div class="tp-chips">';
+  genres.forEach(g=>{const ic=CHAPTER_ICON[g.genre]||'🧩';h+='<button class="tp-chip" onclick="startTopicPractice(\''+String(g.genre).replace(/\x27/g,"\\\x27")+'\')"><span class="tp-ico">'+ic+'</span><span>'+escapeHtml(g.genre)+'</span><span class="tp-cnt">'+g.withChoices+'</span></button>';});
+  h+='</div></div>';
+  return h;
 }
 function qCardHtml(q,si,qi){
   const k=getQKey(q),a=answerData[k],v=viewData[k];
@@ -1887,13 +1915,30 @@ function gridFilter(mode,btn){
 }
 
 function goBack(){
+  if(practiceSet){const si=currentSectionIdx;practiceSet=null;if(si>=0)showGrid(si);else goHome();return;}
   if(viewMode==='quiz'&&currentSectionIdx>=0){showGrid(currentSectionIdx);}
   else{goHome();}
+}
+function startTopicPractice(genre){
+  const qs=QUESTIONS.filter(q=>normChapter(q.chapter)===genre&&q.choices&&q.choices.length>0);
+  if(!qs.length){alert('이 주제에 풀 수 있는 문제가 없습니다.');return;}
+  qs.sort((a,b)=>{const sa=answerData[getQKey(a)]?1:0,sb=answerData[getQKey(b)]?1:0;return sa-sb;});
+  practiceSet={name:genre,genre:genre,questions:qs};
+  loadQuestion(qs[0],true);
+}
+function practiceNav(idx){if(!practiceSet)return;const q=practiceSet.questions[idx];if(q)loadQuestion(q,true);}
+let _ptToastTm=null;
+function practiceToast(msg){
+  let t=document.getElementById('_ptToast');
+  if(!t){t=document.createElement('div');t.id='_ptToast';t.className='pt-toast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(_ptToastTm);_ptToastTm=setTimeout(function(){t.classList.remove('show');},1900);
 }
 
 function openLightbox(src){const lb=document.createElement('div');lb.className='lightbox';lb.onclick=()=>lb.remove();lb.innerHTML='<img src="'+src+'">';document.body.appendChild(lb);}
 
-function loadQuestion(q){
+function loadQuestion(q,keepPractice){
+  if(!keepPractice)practiceSet=null;
   currentQ=q;currentQIdx=QUESTIONS.indexOf(q);viewMode='quiz';pendingMemoImg=null;pendingExplImg=null;explEditOpen=false;editingExplId=null;
   const k=getQKey(q);
   if(!viewData[k])viewData[k]={count:0,lastViewed:0};
@@ -1905,11 +1950,18 @@ function loadQuestion(q){
   document.getElementById('quizContainer').style.display='block';
   document.getElementById('backBtn').style.display='inline-block';
   stopExamTimer();setNav(null);
-  document.getElementById('headerTitle').textContent=q.section+' · Q'+q.num;
-  const secQs=SECTIONS.find(s=>s.name===q.section);
-  const doneInSec=secQs?secQs.questions.filter(qq=>answerData[getQKey(qq)]).length:0;
-  const totalInSec=secQs?secQs.questions.length:0;
-  document.getElementById('headerProgress').textContent=doneInSec+'/'+totalInSec+' 풀이 완료';
+  if(practiceSet){
+    const qi=practiceSet.questions.indexOf(q);
+    const solved=practiceSet.questions.filter(qq=>answerData[getQKey(qq)]).length;
+    document.getElementById('headerTitle').textContent='🎯 '+practiceSet.name+' 주제풀이';
+    document.getElementById('headerProgress').textContent=(qi+1)+'/'+practiceSet.questions.length+' · 푼 '+solved;
+  }else{
+    document.getElementById('headerTitle').textContent=q.section+' · Q'+q.num;
+    const secQs=SECTIONS.find(s=>s.name===q.section);
+    const doneInSec=secQs?secQs.questions.filter(qq=>answerData[getQKey(qq)]).length:0;
+    const totalInSec=secQs?secQs.questions.length:0;
+    document.getElementById('headerProgress').textContent=doneInSec+'/'+totalInSec+' 풀이 완료';
+  }
   if(window.innerWidth<=768){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
   renderQuiz();buildBookList();
   document.getElementById('contentArea').scrollTop=0;
@@ -1921,7 +1973,9 @@ function renderQuiz(){
   if(v&&v.count>0)vh='<div class="meta-views">👁 '+v.count+'회 · '+timeAgo(v.lastViewed)+' <button class="meta-minus-btn" onclick="decrementView(\''+k+'\')">−1</button><button class="meta-reset-btn" onclick="resetView(\''+k+'\')">✕</button></div>';
   const isMarked=isMarkedForRepeat(k);
   const repeatBtn='<button class="meta-repeat-btn" onclick="toggleRepeatMark(\''+k+'\')" title="'+(isMarked?'반복 표시 해제':'반복 표시 추가')+'" style="background:'+(isMarked?'var(--repeat)':'#fff')+';color:'+(isMarked?'#fff':'var(--text2)')+';border:1px solid '+(isMarked?'var(--repeat)':'var(--border2)')+';padding:4px 11px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;font-family:inherit">🔁 '+(isMarked?'반복 표시됨':'반복 표시')+'</button>';
-  let h='<div class="quiz-card"><div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">문제 '+q.num+'</div>'+repeatBtn+vh+'</div>';
+  let h='<div class="quiz-card">';
+  if(practiceSet){const pqi=practiceSet.questions.indexOf(q)+1;h+='<div class="practice-bar"><span class="pb-ico">🎯</span><b>'+escapeHtml(practiceSet.name)+'</b> 주제풀이<span class="pb-prog">'+pqi+' / '+practiceSet.questions.length+'</span><button class="pb-exit" onclick="goBack()">✕ 나가기</button></div>';}
+  h+='<div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">문제 '+q.num+'</div>'+repeatBtn+vh+'</div>';
   h+='<div class="quiz-question">'+escapeHtml(q.question);
   if(q.question_images&&q.question_images.length)q.question_images.forEach(img=>{h+='<br><img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});
   h+='</div>';
@@ -1933,16 +1987,27 @@ function renderQuiz(){
   if(ea)h+=renderResult(q,ea.selected);
   h+=renderNoteSection(q);
   h+=mnemSectionHtml(q);
-  const secQs=SECTIONS.find(s=>s.name===q.section);
-  if(secQs){
-    const qi=secQs.questions.indexOf(q);
+  if(practiceSet){
+    const list=practiceSet.questions;const qi=list.indexOf(q);
     h+='<div class="quiz-nav">';
     h+='<div style="display:flex;gap:10px;flex-wrap:wrap">';
-    if(qi>0)h+='<button onclick="loadQuestion(SECTIONS['+SECTIONS.indexOf(secQs)+'].questions['+(qi-1)+'])">← 이전</button>';
-    h+='<button class="qnav-list" onclick="goBack()">📋 목록</button>';
+    if(qi>0)h+='<button onclick="practiceNav('+(qi-1)+')">← 이전</button>';
+    h+='<button class="qnav-list" onclick="goBack()">📋 주제목록</button>';
     h+='</div>';
-    if(qi<secQs.questions.length-1)h+='<button class="primary" onclick="loadQuestion(SECTIONS['+SECTIONS.indexOf(secQs)+'].questions['+(qi+1)+'])">다음 →</button>';else h+='<div></div>';
+    if(qi<list.length-1)h+='<button class="primary" onclick="practiceNav('+(qi+1)+')">다음 →</button>';else h+='<button class="primary" onclick="goBack()">✓ 완료</button>';
     h+='</div>';
+  }else{
+    const secQs=SECTIONS.find(s=>s.name===q.section);
+    if(secQs){
+      const qi=secQs.questions.indexOf(q);
+      h+='<div class="quiz-nav">';
+      h+='<div style="display:flex;gap:10px;flex-wrap:wrap">';
+      if(qi>0)h+='<button onclick="loadQuestion(SECTIONS['+SECTIONS.indexOf(secQs)+'].questions['+(qi-1)+'])">← 이전</button>';
+      h+='<button class="qnav-list" onclick="goBack()">📋 목록</button>';
+      h+='</div>';
+      if(qi<secQs.questions.length-1)h+='<button class="primary" onclick="loadQuestion(SECTIONS['+SECTIONS.indexOf(secQs)+'].questions['+(qi+1)+'])">다음 →</button>';else h+='<div></div>';
+      h+='</div>';
+    }
   }
   h+='</div>';c.innerHTML=h;renderPendingImg();renderPendingExplImg();
 }
@@ -1953,7 +2018,8 @@ function selectAnswer(num){
   answerData[k]={selected:num,correct:ic,timestamp:Date.now()};recordStudy(ic);syncToCloud();
   document.querySelectorAll('.choice-btn').forEach(b=>{const n=parseInt(b.getAttribute('data-choice'));b.classList.add('disabled');if(n===qAns)b.classList.add('correct');else if(n===num&&!ic)b.classList.add('wrong');else b.classList.add('dimmed');});
   document.getElementById('choicesArea').insertAdjacentHTML('afterend',renderResult(q,num));
-  if(ic)launchConfetti();
+  if(ic)launchConfetti();else if(practiceSet)practiceToast('📌 오답노트에 자동 저장됨');
+  if(practiceSet){const qi=practiceSet.questions.indexOf(q);const solved=practiceSet.questions.filter(qq=>answerData[getQKey(qq)]).length;const hp=document.getElementById('headerProgress');if(hp)hp.textContent=(qi+1)+'/'+practiceSet.questions.length+' · 푼 '+solved;}
   buildBookList();updateStats();updateMemoCount();
 }
 function renderResult(q,sel){
@@ -2151,7 +2217,7 @@ function last7Days(){const out=[],wd=['일','월','화','수','목','금','토']
 function setNav(which){['navHome','navFlash','navExam'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');});const map={home:'navHome',flash:'navFlash',exam:'navExam'};if(which&&map[which]){const e=document.getElementById(map[which]);if(e)e.classList.add('active');}updateNavMini();}
 function updateNavMini(){const w=QUESTIONS.filter(q=>{const a=answerData[getQKey(q)];return a&&!a.correct;}).length;const r=Object.keys(repeatMarks).filter(k=>repeatMarks[k]&&repeatMarks[k].marked).length;const n=w+r;const e=document.getElementById('navFlashMini');if(e){if(n>0){e.textContent=n;e.style.display='';}else{e.style.display='none';}}}
 function goHome(){
-  viewMode='welcome';currentQ=null;currentSectionIdx=-1;stopExamTimer();
+  viewMode='welcome';currentQ=null;currentSectionIdx=-1;practiceSet=null;stopExamTimer();
   ['gridContainer','quizContainer','flashContainer','examContainer'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('welcomeScreen').style.display='';
   document.getElementById('backBtn').style.display='none';
