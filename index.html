@@ -179,7 +179,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .note-add-btn.memo-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
 .note-add-btn.memo-btn:hover{filter:brightness(1.06);box-shadow:var(--shadow-sm)}
 .note-list{margin-top:8px}
-.note-item{background:#fff;border-radius:11px;padding:12px 16px;margin-bottom:8px;border-left:4px solid var(--accent);background:var(--accent-soft);font-size:13px;line-height:1.6;position:relative;box-shadow:var(--shadow-sm)}
+.note-item{background:#fff;border-radius:11px;padding:12px 16px;margin-bottom:8px;border-left:4px solid var(--accent);background:var(--accent-soft);font-size:13px;line-height:1.6;position:relative;box-shadow:var(--shadow-sm);white-space:pre-wrap;overflow-wrap:break-word}
 .note-item .note-del{position:absolute;top:8px;right:10px;cursor:pointer;color:var(--text3);font-size:16px;transition:color .15s;background:none;border:none}
 .note-item .note-del:hover{color:var(--wrong)}
 .note-item .note-time{font-size:10px;color:var(--text3);margin-top:4px}
@@ -214,7 +214,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .memo-item:hover{background:var(--mint)}
 .memo-item.wrong{border-left-color:var(--wrong)}.memo-item.note{border-left-color:var(--accent)}
 .memo-item .memo-q{font-size:10.5px;color:var(--accent-deep);margin-bottom:5px;font-weight:700}
-.memo-item .memo-text{color:var(--body-text)}
+.memo-item .memo-text{color:var(--body-text);white-space:pre-wrap;overflow-wrap:break-word}
 .memo-item .memo-del{position:absolute;top:8px;right:10px;cursor:pointer;color:var(--text3);font-size:15px;transition:color .15s;background:none;border:none}
 .memo-item .memo-del:hover{color:var(--wrong)}
 .memo-item.selected{background:var(--accent-soft);border-left:3px solid var(--accent)}
@@ -427,7 +427,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .mnem-input:focus{border-color:var(--gold)}
 .mnem-add{padding:10px 15px;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;transition:filter .15s}
 .mnem-add:hover{filter:brightness(1.06)}
-.mnem-item{background:#fff;border-radius:10px;padding:10px 14px;margin-top:7px;border-left:3px solid var(--gold);font-size:13px;line-height:1.6;position:relative;box-shadow:var(--shadow-sm)}
+.mnem-item{background:#fff;border-radius:10px;padding:10px 14px;margin-top:7px;border-left:3px solid var(--gold);font-size:13px;line-height:1.6;position:relative;box-shadow:var(--shadow-sm);white-space:pre-wrap;overflow-wrap:break-word}
 .mnem-item .mnem-del{position:absolute;top:7px;right:9px;cursor:pointer;color:var(--text3);font-size:15px;background:none;border:none}
 .mnem-item .mnem-del:hover{color:var(--wrong)}
 
@@ -458,7 +458,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .flash-face img{width:100%;max-width:100%;border-radius:10px;margin-top:12px;box-shadow:var(--shadow-sm)}
 .flash-face .ff-ans{font-size:15px;font-weight:800;color:var(--correct);margin-bottom:8px}
 .flash-face .ff-hint{margin-top:auto;font-size:11.5px;color:var(--text3);font-weight:700;text-align:center;padding-top:14px}
-.flash-mnem{margin-top:10px;background:var(--gold-soft);border:1px solid rgba(47,143,134,.3);border-radius:11px;padding:10px 13px;font-size:13px;line-height:1.6;color:#1f5a54}
+.flash-mnem{margin-top:10px;background:var(--gold-soft);border:1px solid rgba(47,143,134,.3);border-radius:11px;padding:10px 13px;font-size:13px;line-height:1.6;color:#1f5a54;white-space:pre-wrap;overflow-wrap:break-word}
 .flash-mnem b{color:var(--gold-deep)}
 .flash-rate{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:10px}
 .rate-btn{padding:13px;border-radius:13px;border:1px solid var(--border2);background:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -890,7 +890,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260603-2145';
+const APP_VERSION='20260603-2210';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
