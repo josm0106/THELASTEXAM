@@ -422,12 +422,23 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 /* ===== MNEMONIC (암기법) in quiz ===== */
 .mnem-box{margin-top:11px;background:linear-gradient(135deg,var(--gold-soft),rgba(47,143,134,.04));border:1px solid rgba(47,143,134,.25);border-radius:12px;padding:12px 15px}
 .mnem-box .mnem-head{font-size:13px;font-weight:800;color:var(--gold-deep);display:flex;align-items:center;gap:6px;margin-bottom:8px}
-.mnem-input-row{display:flex;gap:8px}
+.mnem-input-row{display:flex;gap:8px;align-items:stretch}
+.mnem-fields{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mnem-front{padding:9px 13px;border:1px solid rgba(47,143,134,.4);border-radius:10px;font-size:13px;font-family:inherit;outline:none;background:#fff;color:var(--body-text);font-weight:700}
+.mnem-front:focus{border-color:var(--gold)}
 .mnem-input{flex:1;padding:10px 13px;border:1px solid rgba(47,143,134,.4);border-radius:10px;font-size:13px;font-family:inherit;resize:none;outline:none;min-height:40px;max-height:120px;line-height:1.5;background:#fff;color:var(--body-text)}
 .mnem-input:focus{border-color:var(--gold)}
 .mnem-add{padding:10px 15px;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;transition:filter .15s}
 .mnem-add:hover{filter:brightness(1.06)}
 .mnem-item{background:#fff;border-radius:10px;padding:10px 14px;margin-top:7px;border-left:3px solid var(--gold);font-size:13px;line-height:1.6;position:relative;box-shadow:var(--shadow-sm);white-space:pre-wrap;overflow-wrap:break-word}
+.mnem-item.mnem-flip{cursor:pointer;white-space:normal;transition:background .15s}
+.mnem-item.mnem-flip:hover{background:var(--gold-soft)}
+.mnem-flip .mnf-front{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-right:18px}
+.mnem-flip .mnf-q{font-weight:800;color:var(--gold-deep);font-size:14px}
+.mnem-flip .mnf-hint{font-size:11px;color:var(--text3);font-weight:600}
+.mnem-flip .mnf-back{display:none;margin-top:9px;padding-top:9px;border-top:1px dashed rgba(47,143,134,.4);color:var(--body-text);font-weight:600;white-space:pre-wrap;overflow-wrap:break-word}
+.mnem-flip.revealed .mnf-back{display:block}
+.mnem-flip.revealed .mnf-hint{display:none}
 .mnem-item .mnem-del{position:absolute;top:7px;right:9px;cursor:pointer;color:var(--text3);font-size:15px;background:none;border:none}
 .mnem-item .mnem-del:hover{color:var(--wrong)}
 
@@ -736,7 +747,8 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .note-add-btn.memo-btn:hover,.mnem-add:hover,.uexpl-add:hover,.uexpl-save:hover,.exam-topbar .et-submit:hover{filter:brightness(1.05)}
 /* 니모닉 박스 = 올리브 톤(라임 패밀리)로 조화 */
 .mnem-box{background:linear-gradient(135deg,var(--gold-soft),rgba(111,158,44,.04));border-color:rgba(111,158,44,.26)}
-.mnem-input{border-color:rgba(111,158,44,.4)}
+.mnem-input,.mnem-front{border-color:rgba(111,158,44,.4)}
+.mnem-flip .mnf-back{border-top-color:rgba(111,158,44,.45)}
 .flash-mnem{border-color:rgba(111,158,44,.3);color:var(--gold-deep)}
 /* 메타바 클린화(뜬 민트 블록 제거) + 정답/오답 톤 조화(분홍 제거) */
 .quiz-meta{background:#fff;border:1px solid var(--border);border-left:3px solid var(--lime-deep);box-shadow:var(--shadow-sm)}
@@ -890,7 +902,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260603-2210';
+const APP_VERSION='20260603-2235';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -2872,12 +2884,34 @@ function resumeLastPos(){
 function mnemSectionHtml(q){
   const k=getQKey(q);
   let h='<div class="mnem-box"><div class="mnem-head">💡 암기법 · 니모닉</div>';
-  h+='<div class="mnem-input-row"><textarea class="mnem-input" id="mnemInput" placeholder="두문자어·연상법·암기 팁을 적어두세요 (예: 손목뼈 — 손배월삼, 대유두구...)"></textarea><button class="mnem-add" onclick="addMnem()">추가</button></div>';
+  h+='<div class="mnem-input-row"><div class="mnem-fields">'
+    +'<input class="mnem-front" id="mnemFront" placeholder="앞면 — 키워드·질문 (예: Liposarcoma) · 비우면 일반 메모">'
+    +'<textarea class="mnem-input" id="mnemInput" placeholder="뒷면 — 클릭하면 보일 내용 (예: MDM2 gene, CDK4 gene)"></textarea>'
+    +'</div><button class="mnem-add" onclick="addMnem()">추가</button></div>';
   const mn=mnemonics.filter(n=>n.qKey===k);
-  mn.forEach(n=>{h+='<div class="mnem-item">'+escapeHtml(n.text)+'<button class="mnem-del" title="삭제" onclick="deleteMnem('+n.id+')">×</button></div>';});
+  mn.forEach(n=>{
+    if(n.front){
+      h+='<div class="mnem-item mnem-flip" onclick="toggleMnemFlip(this)" title="클릭 → 정답 보기/숨기기">'
+        +'<div class="mnf-front"><span class="mnf-q">'+escapeHtml(n.front)+'</span><span class="mnf-hint">👆 눌러서 정답 보기</span></div>'
+        +'<div class="mnf-back">'+escapeHtml(n.text)+'</div>'
+        +'<button class="mnem-del" title="삭제" onclick="event.stopPropagation();deleteMnem('+n.id+')">×</button></div>';
+    }else{
+      h+='<div class="mnem-item">'+escapeHtml(n.text)+'<button class="mnem-del" title="삭제" onclick="deleteMnem('+n.id+')">×</button></div>';
+    }
+  });
   h+='</div>';return h;
 }
-function addMnem(){const i=document.getElementById('mnemInput');if(!i||!currentQ)return;const t=i.value.trim();if(!t)return;const k=getQKey(currentQ);mnemonics.push({id:Date.now(),qKey:k,section:currentQ.section,qNum:currentQ.num,text:t,created:Date.now()});i.value='';syncToCloud();renderQuiz();updateNavMini();}
+function addMnem(){
+  const fi=document.getElementById('mnemFront'),i=document.getElementById('mnemInput');
+  if(!i||!currentQ)return;
+  let front=fi?fi.value.trim():'',back=i.value.trim();
+  if(!front&&!back)return;
+  if(!back){back=front;front='';}              /* 앞면만 입력 → 일반 메모로 */
+  const k=getQKey(currentQ);
+  mnemonics.push({id:Date.now(),qKey:k,section:currentQ.section,qNum:currentQ.num,text:back,front:front,created:Date.now()});
+  if(fi)fi.value='';i.value='';syncToCloud();renderQuiz();updateNavMini();
+}
+function toggleMnemFlip(el){if(el)el.classList.toggle('revealed');}
 function deleteMnem(id){mnemonics=mnemonics.filter(n=>n.id!==id);syncToCloud();if(currentQ)renderQuiz();}
 
 /* ---------- 내 해설(보충) — 텍스트 + 사진 ---------- */
@@ -2964,7 +2998,7 @@ function renderFlash(){
   h+='<div class="flash-face back"><div class="ff-tag">정답 · 해설</div><div class="ff-ans">✅ 정답: '+q.answer+'번</div>';
   if(q.explanation)h+='<div style="font-size:13.5px;line-height:1.6;color:var(--body-text);white-space:pre-wrap">'+escapeHtml(q.explanation)+'</div>';
   if(q.explanation_images&&q.explanation_images.length)q.explanation_images.forEach(img=>{h+='<img src="'+img+'">';});
-  mnemonics.filter(n=>n.qKey===k).forEach(n=>{h+='<div class="flash-mnem"><b>💡 암기법:</b> '+escapeHtml(n.text)+'</div>';});
+  mnemonics.filter(n=>n.qKey===k).forEach(n=>{h+='<div class="flash-mnem"><b>💡 암기법:</b> '+(n.front?escapeHtml(n.front)+' → ':'')+escapeHtml(n.text)+'</div>';});
   h+='<div class="ff-hint">얼마나 잘 외웠나요? 아래에서 평가하세요 👇</div></div>';
   h+='</div></div>';
   h+='<div id="flashControls">'+(flashFlipped?flashRateHtml():'<button class="flash-flip-btn" onclick="event.stopPropagation();flipFlash()">👁 정답·해설 보기</button>')+'</div>';
