@@ -912,7 +912,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260605-0003';
+const APP_VERSION='20260605-0100';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -936,8 +936,11 @@ setTimeout(_checkForUpdate,30000);setInterval(_checkForUpdate,5*60*1000);window.
 <script>
 const firebaseConfig={apiKey:"AIzaSyD5zH9YzZuZ90vgJqZUC-y2MefJ5Iqnji4",authDomain:"eliteforce-97939.firebaseapp.com",projectId:"eliteforce-97939",storageBucket:"eliteforce-97939.firebasestorage.app",messagingSenderId:"628068933819",appId:"1:628068933819:web:0f423a2995d47256bc899e"};
 firebase.initializeApp(firebaseConfig);const auth=firebase.auth();const db=firebase.firestore();
+/* 📶 오프라인 영속성: 답을 누른 뒤 폰을 잠그거나 앱을 닫아도 쓰기가 IndexedDB에 영구 큐잉되어 네트워크 복구/재실행 시 동기화됨.
+   멀티탭(failed-precondition)·iOS사파리 시크릿(unimplemented) 등에서 거부될 수 있으니 동기 throw와 비동기 reject 모두 무시 */
+try{db.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
 try{auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});}catch(e){}
-let currentUser=null,firestoreReady=false,syncDebounceTimer=null;
+let currentUser=null,firestoreReady=false,syncDebounceTimer=null,pendingSync=false,syncInFlight=false,lastPullAt=0;
 /* 이 앱 전용 네임스페이스 — 다른 앱(017)과 데이터가 섞이지 않도록 jm_ 접두사 사용 */
 const PREFIX='jeonmuni2026',EMAIL_DOMAIN='orthoboard.app';
 function showSync(s,m){const e=document.getElementById('syncIndicator');e.className='sync-indicator '+s;e.textContent=m||'';if(s==='synced')setTimeout(()=>{e.className='sync-indicator';},1500);}
@@ -997,19 +1000,27 @@ auth.onAuthStateChanged(u=>{
 });
 function _mergeArrById(a,b){const seen=new Set();const out=[];for(const it of [...(a||[]),...(b||[])]){if(!it||it.id==null)continue;if(seen.has(it.id))continue;seen.add(it.id);out.push(it);}return out;}
 function _mergeObjByKey(a,b,timeKey){const out={...(a||{})};for(const k of Object.keys(b||{})){if(!out[k]){out[k]=b[k];}else{const t1=(out[k]&&out[k][timeKey])||0,t2=(b[k]&&b[k][timeKey])||0;if(t2>t1)out[k]={...b[k]};if(timeKey==='lastViewed'&&out[k].count!=null&&b[k].count!=null)out[k].count=Math.max(out[k].count,b[k].count);}}return out;}
+/* 같은 키를 양쪽 기기서 답했을 때(개수는 동일) 로컬에 '더 최신' 값이 있으면 true → 클라우드로 다시 올려 전파.
+   업로드 후엔 클라우드가 같아져 다음 로드때 false가 되므로 무한 업로드 루프 없음 */
+function _hasNewerLocal(cloud,local,timeKey){const c=cloud||{},l=local||{};for(const k of Object.keys(l)){if(c[k]===undefined)continue;if((((l[k]||{})[timeKey])||0)>(((c[k]||{})[timeKey])||0))return true;}return false;}
+function _studyLogNewer(cloud,merged){const c=cloud||{},m=merged||{};for(const k of Object.keys(m)){const a=m[k]||{},b=c[k]||{};if((a.solved||0)>(b.solved||0)||(a.correct||0)>(b.correct||0))return true;}return false;}
 async function loadFromFirestore(){
   if(!currentUser)return;showSync('syncing','☁️ 동기화 중...');loadLocalData();
   try{
     const d=await db.collection('users').doc(currentUser.uid).get();
     if(d.exists){
       const data=d.data();
+      /* 🔒 초기화 토큰이 클라우드에 이미 기록돼 있으면(=계정 단위로 1회 초기화 완료) 이 기기에서도 재초기화 금지 */
+      if(data.jm_resetToken===RESET_TOKEN){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}}
       const cw=data.jm_wrongNotes||[],cm=data.jm_memoNotes||[],cv=data.jm_viewData||{},ca=data.jm_answerData||{},cr=data.jm_repeatMarks||{};
       const cmn=data.jm_mnemonics||[],csl=data.jm_studyLog||{},ceh=data.jm_examHistory||[],cdg=data.jm_dailyGoal,cue=data.jm_userExpl||[],ceu=data.jm_examUsed||{};
       const mw=_mergeArrById(cw,wrongNotes),mm=_mergeArrById(cm,memoNotes),mv=_mergeObjByKey(cv,viewData,'lastViewed'),ma=_mergeObjByKey(ca,answerData,'timestamp'),mr=_mergeObjByKey(cr,repeatMarks,'ts');
       const mmn=_mergeArrById(cmn,mnemonics),msl=_mergeStudyLog(csl,studyLog),meh=_mergeArrById(ceh,examHistory),mue=_mergeArrById(cue,userExpl);
       const meu={...ceu,...examUsed};/* 출제이력 합집합(키=qKey) */
       const mdg=(typeof cdg==='number'&&cdg>0)?cdg:dailyGoal;
-      const upload=mw.length>cw.length||mm.length>cm.length||Object.keys(mv).length>Object.keys(cv).length||Object.keys(ma).length>Object.keys(ca).length||Object.keys(mr).length>Object.keys(cr).length||mmn.length>cmn.length||meh.length>ceh.length||Object.keys(msl).length>Object.keys(csl).length||mue.length>cue.length||Object.keys(meu).length>Object.keys(ceu).length;
+      const upload=mw.length>cw.length||mm.length>cm.length||Object.keys(mv).length>Object.keys(cv).length||Object.keys(ma).length>Object.keys(ca).length||Object.keys(mr).length>Object.keys(cr).length||mmn.length>cmn.length||meh.length>ceh.length||Object.keys(msl).length>Object.keys(csl).length||mue.length>cue.length||Object.keys(meu).length>Object.keys(ceu).length
+        /* 개수는 같지만 로컬이 더 최신인 경우(같은 문제 재답/수정)도 전파 */
+        ||_hasNewerLocal(ca,answerData,'timestamp')||_hasNewerLocal(cv,viewData,'lastViewed')||_hasNewerLocal(cr,repeatMarks,'ts')||_studyLogNewer(csl,msl);
       wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;
       if(upload){_saveLocal();await saveToFirestore();showSync('synced','✅ 머지 완료');return;}
     }else{
@@ -1031,18 +1042,28 @@ function _saveLocal(){
   localStorage.setItem(PREFIX+'_dailygoal',String(dailyGoal));
   localStorage.setItem(PREFIX+'_examused',JSON.stringify(examUsed));
 }
-function syncToCloud(){_saveLocal();if(!firestoreReady||!currentUser)return;clearTimeout(syncDebounceTimer);syncDebounceTimer=setTimeout(()=>saveToFirestore(0),1500);}
+function syncToCloud(){_saveLocal();pendingSync=true;if(!firestoreReady||!currentUser)return;clearTimeout(syncDebounceTimer);syncDebounceTimer=setTimeout(()=>saveToFirestore(0),1500);}
+/* 디바운스(1.5s)를 기다리지 않고 즉시 클라우드로 밀어냄 — 화면 숨김/탭 종료 직전에 호출. 바뀐 게 없으면 no-op */
+function flushSync(){if(firestoreReady&&currentUser&&pendingSync){clearTimeout(syncDebounceTimer);saveToFirestore(0);}}
 async function saveToFirestore(retryCount){
   if(retryCount==null)retryCount=0;if(!currentUser)return;
+  if(syncInFlight){pendingSync=true;return;}/* 동시 쓰기는 1건으로 직렬화(flush·디바운스·머지업로드 경합/3중 set() 방지) */
+  syncInFlight=true;pendingSync=false;
   try{
-    await db.collection('users').doc(currentUser.uid).set({jm_wrongNotes:wrongNotes,jm_memoNotes:memoNotes,jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:userExpl,jm_examUsed:examUsed,jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-  }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패');if(retryCount<3){setTimeout(()=>saveToFirestore(retryCount+1),2000*(retryCount+1));}}
+    const rt=localStorage.getItem(PREFIX+'_resetToken');/* 토큰을 클라우드에도 기록해 다른 기기의 재초기화 방지 */
+    await db.collection('users').doc(currentUser.uid).set({jm_wrongNotes:wrongNotes,jm_memoNotes:memoNotes,jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:userExpl,jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패');pendingSync=true;if(retryCount<3){setTimeout(()=>saveToFirestore(retryCount+1),2000*(retryCount+1));}}
+  finally{syncInFlight=false;}
 }
 /* 🗑️ 1회성 전체 기록 초기화 — 토큰이 일치하면 건너뜀. 클라우드를 비운 뒤에만 토큰 기록(미완료 시 다음 로드때 재시도) */
 const RESET_TOKEN='reset-20260602';
 async function maybeResetAll(){
   try{
     if(localStorage.getItem(PREFIX+'_resetToken')===RESET_TOKEN)return;
+    /* 🛟 이미 기록(클라우드 머지 포함)이 있으면 = 1회 초기화는 과거에 끝났고 이후 쌓인 데이터 → 절대 지우지 않고
+       토큰만 남겨(로컬+클라우드) 재초기화를 영구 차단. 새 기기/스토리지 비운 기기가 폰 기록을 지우는 사고를 막음 */
+    const hasData=Object.keys(answerData).length||wrongNotes.length||memoNotes.length||mnemonics.length||userExpl.length||examHistory.length||Object.keys(repeatMarks).length||Object.keys(studyLog).length||Object.keys(viewData).length;
+    if(hasData){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}if(currentUser){try{await saveToFirestore();}catch(e){}}return;}
     wrongNotes=[];memoNotes=[];viewData={};answerData={};repeatMarks={};mnemonics=[];studyLog={};examHistory=[];userExpl=[];dailyGoal=20;examUsed={};
     _saveLocal();
     if(currentUser){
@@ -1051,6 +1072,26 @@ async function maybeResetAll(){
     }
   }catch(e){console.warn('[reset] 실패',e);}
 }
+/* 📲 화면 전환 핸들러
+   ① 숨김(잠금/앱전환/탭종료) 직전 → 디바운스 기다리지 말고 즉시 클라우드 저장(모바일 기록 유실 방지, 핵심 수정)
+   ② 다시 보일 때 → 클라우드를 다시 당겨와 다른 기기(폰)의 새 기록을 이미 열린 PC 탭에도 반영 */
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){flushSync();return;}
+  /* visible 복귀 — 안전가드 모두 통과할 때만 비파괴적으로 새로고침 */
+  if(!firestoreReady||!currentUser||navigator.onLine===false)return;
+  if(pendingSync||syncInFlight)return;            /* 로컬 변경/삭제가 아직 업로드 전이면 머지가 되살릴 수 있어 보류 */
+  if(explEditOpen||editingExplId)return;          /* 내 해설 편집기 열려있으면 보류 */
+  if(Date.now()-lastPullAt<15000)return;          /* 15초 스로틀 */
+  lastPullAt=Date.now();
+  loadFromFirestore().then(()=>{
+    updateStats();buildBookList();updateMemoCount();
+    const memoEl=document.getElementById('memoNoteInput'),explEl=document.getElementById('uexplInput');
+    const typing=(memoEl&&memoEl.value.trim())||(explEl&&explEl.value.trim());
+    if(viewMode==='welcome')renderDashboard();    /* 대시보드는 안전 — 입력 없음 */
+    else if(viewMode==='quiz'&&currentQ&&!answerData[getQKey(currentQ)]&&!typing)renderQuiz();/* 답 안 한 문제 + 입력중 아닐 때만 */
+  }).catch(()=>{});
+});
+window.addEventListener('pagehide',flushSync);    /* bfcache 친화적, beforeunload보다 모바일서 신뢰성 높음 */
 </script>
 
 <!-- ===== 문제 데이터 (QUESTIONS) =====
