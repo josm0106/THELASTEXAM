@@ -912,7 +912,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260606-1028';
+const APP_VERSION='20260606-1904';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -1072,14 +1072,13 @@ async function maybeResetAll(){
     }
   }catch(e){console.warn('[reset] 실패',e);}
 }
-/* 📲 화면 전환 핸들러
-   ① 숨김(잠금/앱전환/탭종료) 직전 → 디바운스 기다리지 말고 즉시 클라우드 저장(모바일 기록 유실 방지, 핵심 수정)
-   ② 다시 보일 때 → 클라우드를 다시 당겨와 다른 기기(폰)의 새 기록을 이미 열린 PC 탭에도 반영 */
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'){flushSync();return;}
-  /* visible 복귀 — 안전가드 모두 통과할 때만 비파괴적으로 새로고침 */
-  if(!firestoreReady||!currentUser||navigator.onLine===false)return;
-  if(pendingSync||syncInFlight)return;            /* 로컬 변경/삭제가 아직 업로드 전이면 머지가 되살릴 수 있어 보류 */
+/* 📲 클라우드 당겨오기(비파괴적) — 다른 기기(아이패드·폰)의 새 기록을 이미 열린 탭에도 반영.
+   안전가드 모두 통과할 때만 머지하며, 막힌 상태(보류 업로드/시작 실패)는 스스로 복구 */
+function pullFromCloud(){
+  if(!currentUser||navigator.onLine===false)return;
+  if(!firestoreReady){loadFromFirestore().then(()=>{firestoreReady=true;}).catch(()=>{});return;}/* 시작 시 로드 실패한 탭 자가복구 */
+  if(syncInFlight)return;
+  if(pendingSync){flushSync();return;}            /* 보류된 로컬 변경을 먼저 업로드 → 다음 주기에 당김(머지 부활 방지) */
   if(explEditOpen||editingExplId)return;          /* 내 해설 편집기 열려있으면 보류 */
   if(Date.now()-lastPullAt<15000)return;          /* 15초 스로틀 */
   lastPullAt=Date.now();
@@ -1090,7 +1089,16 @@ document.addEventListener('visibilitychange',()=>{
     if(viewMode==='welcome')renderDashboard();    /* 대시보드는 안전 — 입력 없음 */
     else if(viewMode==='quiz'&&currentQ&&!answerData[getQKey(currentQ)]&&!typing)renderQuiz();/* 답 안 한 문제 + 입력중 아닐 때만 */
   }).catch(()=>{});
+}
+/* 📲 화면 전환 핸들러
+   ① 숨김(잠금/앱전환/탭종료) 직전 → 디바운스 기다리지 말고 즉시 클라우드 저장(모바일 기록 유실 방지)
+   ② 다시 보일 때 → 클라우드 당김 */
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){flushSync();return;}
+  pullFromCloud();
 });
+/* ⏱️ 항상 화면에 보이는 탭(멀티 모니터 PC 등)은 visibilitychange가 안 일어나므로 60초마다 주기적으로 당김 */
+setInterval(()=>{if(document.visibilityState==='visible')pullFromCloud();},60000);
 window.addEventListener('pagehide',flushSync);    /* bfcache 친화적, beforeunload보다 모바일서 신뢰성 높음 */
 </script>
 
