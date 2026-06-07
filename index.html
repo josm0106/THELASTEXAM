@@ -671,6 +671,10 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .sidebar-bottom button:hover{background:var(--shell-card2);border-color:var(--lime-line)}
 .sidebar-bottom .count{background:var(--lime);color:var(--ink)}
 .sidebar-bottom .wrong-count{background:#e06a5b;color:#fff}
+.sidebar-bottom .sync-now-btn{background:linear-gradient(135deg,var(--lime),var(--lime2))!important;color:var(--ink)!important;border:none!important;font-weight:800;box-shadow:0 4px 14px rgba(184,242,74,.22)}
+.sidebar-bottom .sync-now-btn:hover{filter:brightness(1.04);box-shadow:0 6px 18px rgba(184,242,74,.32)}
+.sidebar-bottom .sync-now-btn:disabled{opacity:.6;cursor:default;filter:none}
+.sidebar-bottom .sync-now-btn .lastsync{margin-left:auto;font-size:10.5px;font-weight:700;opacity:.72;color:var(--ink)}
 
 /* ---- 상단 헤더 셸 ---- */
 .main-header{background:rgba(11,19,14,.76);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border-bottom:1px solid var(--shell-bd);box-shadow:0 1px 0 var(--shell-bd);color:var(--shell-tx2)}
@@ -871,6 +875,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
   <div class="sidebar-divider"></div>
   <div class="book-list" id="bookList"></div>
   <div class="sidebar-bottom">
+    <button id="manualSyncBtn" class="sync-now-btn" onclick="manualSync()">💾 저장 &amp; 동기화 <span class="lastsync" id="lastSyncTxt"></span></button>
     <button onclick="toggleMemo()">📝 메모 <span class="count" id="memoCount">0</span></button>
     <button onclick="showRepeatNote()">🔁 반복노트 <span class="count" id="repeatCount" style="background:var(--repeat);color:#fff">0</span></button>
     <button onclick="showWrongNote()">❌ 오답노트 <span class="count wrong-count" id="wrongCount">0</span></button>
@@ -912,7 +917,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260606-1904';
+const APP_VERSION='20260607-1020';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -940,10 +945,14 @@ firebase.initializeApp(firebaseConfig);const auth=firebase.auth();const db=fireb
    멀티탭(failed-precondition)·iOS사파리 시크릿(unimplemented) 등에서 거부될 수 있으니 동기 throw와 비동기 reject 모두 무시 */
 try{db.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
 try{auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});}catch(e){}
-let currentUser=null,firestoreReady=false,syncDebounceTimer=null,pendingSync=false,syncInFlight=false,lastPullAt=0;
+let currentUser=null,firestoreReady=false,syncDebounceTimer=null,pendingSync=false,syncInFlight=false,lastPullAt=0,lastSyncAt=0;
 /* 이 앱 전용 네임스페이스 — 다른 앱(017)과 데이터가 섞이지 않도록 jm_ 접두사 사용 */
 const PREFIX='jeonmuni2026',EMAIL_DOMAIN='orthoboard.app';
 function showSync(s,m){const e=document.getElementById('syncIndicator');e.className='sync-indicator '+s;e.textContent=m||'';if(s==='synced')setTimeout(()=>{e.className='sync-indicator';},1500);}
+/* 🕒 마지막으로 클라우드에 저장/동기화한 시각 — '저장 & 동기화' 버튼 옆에 hh:mm 으로 표시 */
+function _fmtSyncTime(ts){try{return new Date(ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+function setLastSync(ts){lastSyncAt=ts||Date.now();try{localStorage.setItem(PREFIX+'_lastsync',String(lastSyncAt));}catch(e){}updateLastSyncTxt();}
+function updateLastSyncTxt(){const el=document.getElementById('lastSyncTxt');if(!el)return;if(!lastSyncAt){const s=parseInt(localStorage.getItem(PREFIX+'_lastsync')||'0',10);if(s)lastSyncAt=s;}el.textContent=lastSyncAt?('· '+_fmtSyncTime(lastSyncAt)):'';}
 
 const ALLOWED_ID='josm0106';   /* 이 계정만 로그인 허용, 신규 가입 불가 */
 function doLogin(){
@@ -1026,7 +1035,7 @@ async function loadFromFirestore(){
     }else{
       if(wrongNotes.length||memoNotes.length||Object.keys(viewData).length||Object.keys(answerData).length||Object.keys(repeatMarks).length||mnemonics.length||examHistory.length||Object.keys(studyLog).length||userExpl.length){await saveToFirestore();showSync('synced','✅ 데이터 이전 완료');return;}
     }
-    showSync('synced','✅ 동기화 완료');
+    setLastSync(Date.now());showSync('synced','✅ 동기화 완료');
   }catch(e){console.error('[Firestore] 로드 실패:',e);showSync('error','❌ 동기화 실패');}
 }
 function _saveLocal(){
@@ -1052,6 +1061,7 @@ async function saveToFirestore(retryCount){
   try{
     const rt=localStorage.getItem(PREFIX+'_resetToken');/* 토큰을 클라우드에도 기록해 다른 기기의 재초기화 방지 */
     await db.collection('users').doc(currentUser.uid).set({jm_wrongNotes:wrongNotes,jm_memoNotes:memoNotes,jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:userExpl,jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    setLastSync(Date.now());
   }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패');pendingSync=true;if(retryCount<3){setTimeout(()=>saveToFirestore(retryCount+1),2000*(retryCount+1));}}
   finally{syncInFlight=false;}
 }
@@ -1072,6 +1082,48 @@ async function maybeResetAll(){
     }
   }catch(e){console.warn('[reset] 실패',e);}
 }
+/* 🔄 현재 보고 있는 화면을 클라우드 머지 결과로 다시 그림(비파괴적).
+   다른 기기에서 푼 문제·메모·오답이 '지금 화면'에 즉시 반영되게 함.
+   입력/편집/시험 중에는 메인 콘텐츠를 건드리지 않아 작업 유실을 막음. */
+function refreshCurrentView(){
+  const memoEl=document.getElementById('memoNoteInput'),explEl=document.getElementById('uexplInput');
+  const typing=(memoEl&&memoEl.value.trim())||(explEl&&explEl.value.trim());
+  /* 사이드바·카운트·동기화시각은 항상 안전하게 갱신 */
+  updateStats();buildBookList();updateMemoCount();updateNavMini();updateLastSyncTxt();
+  /* 메모/오답/반복 패널이 열려 있으면 목록 갱신(목록엔 입력칸 없음 → 안전) */
+  const mp=document.getElementById('memoPanel');if(mp&&mp.classList.contains('open'))renderMemoPanel();
+  if(explEditOpen||editingExplId)return;          /* 내 해설 편집 중 → 메인 보존 */
+  if(typing)return;                                /* 메모/해설 입력 중 → 메인 보존 */
+  switch(viewMode){
+    case 'welcome':renderDashboard();break;
+    case 'grid':if(currentSectionIdx>=0)renderGrid(currentSectionIdx);break;   /* 그리드 셀 풀이상태 갱신 */
+    case 'topicselect':renderTopicSelect();break;                              /* 주제 카드 통계 갱신 */
+    case 'topiclist':if(currentTopicGenre)renderTopicList(currentTopicGenre);break;
+    case 'quiz':if(currentQ)renderQuiz();break;    /* 기답/미답 모두 — renderQuiz가 답 유무로 알아서 분기 */
+    /* exam·flash 는 진행 중 보호: 재렌더 안 함 */
+  }
+}
+/* 💾 수동 '저장 & 동기화' — 스로틀/디바운스를 무시하고 즉시 업로드 후 즉시 당겨 양방향 동기화.
+   공부 끝에 한 번 눌러 '확실히 저장 + 다른 기기 반영'을 보장하는 안전장치. */
+async function manualSync(){
+  if(!currentUser){showSync('error','로그인이 필요합니다');return;}
+  if(navigator.onLine===false){showSync('error','❌ 오프라인 — 인터넷 연결 확인');return;}
+  const btn=document.getElementById('manualSyncBtn');if(btn)btn.disabled=true;
+  showSync('syncing','☁️ 저장 & 동기화 중...');
+  try{
+    _saveLocal();                                  /* 메모리 → 로컬 보장 */
+    clearTimeout(syncDebounceTimer);
+    /* ① 업로드 강제 — 진행 중이면 잠깐 대기 후 재시도(최대 ~0.7초) */
+    for(let i=0;i<4;i++){if(!syncInFlight){await saveToFirestore(0);break;}await new Promise(r=>setTimeout(r,180));}
+    /* ② 다운로드 강제 — 15초 스로틀/조기반환 우회하고 직접 머지 */
+    lastPullAt=0;
+    await loadFromFirestore();
+    /* ③ 현재 화면 다시 그림 */
+    refreshCurrentView();
+    setLastSync(Date.now());showSync('synced','✅ 저장 & 동기화 완료');
+  }catch(e){console.error('[manualSync] 실패',e);showSync('error','❌ 동기화 실패 — 잠시 후 다시');}
+  finally{if(btn)btn.disabled=false;}
+}
 /* 📲 클라우드 당겨오기(비파괴적) — 다른 기기(아이패드·폰)의 새 기록을 이미 열린 탭에도 반영.
    안전가드 모두 통과할 때만 머지하며, 막힌 상태(보류 업로드/시작 실패)는 스스로 복구 */
 function pullFromCloud(){
@@ -1082,13 +1134,7 @@ function pullFromCloud(){
   if(explEditOpen||editingExplId)return;          /* 내 해설 편집기 열려있으면 보류 */
   if(Date.now()-lastPullAt<15000)return;          /* 15초 스로틀 */
   lastPullAt=Date.now();
-  loadFromFirestore().then(()=>{
-    updateStats();buildBookList();updateMemoCount();
-    const memoEl=document.getElementById('memoNoteInput'),explEl=document.getElementById('uexplInput');
-    const typing=(memoEl&&memoEl.value.trim())||(explEl&&explEl.value.trim());
-    if(viewMode==='welcome')renderDashboard();    /* 대시보드는 안전 — 입력 없음 */
-    else if(viewMode==='quiz'&&currentQ&&!answerData[getQKey(currentQ)]&&!typing)renderQuiz();/* 답 안 한 문제 + 입력중 아닐 때만 */
-  }).catch(()=>{});
+  loadFromFirestore().then(()=>{refreshCurrentView();}).catch(()=>{});  /* 현재 보고 있는 화면까지 갱신 */
 }
 /* 📲 화면 전환 핸들러
    ① 숨김(잠금/앱전환/탭종료) 직전 → 디바운스 기다리지 말고 즉시 클라우드 저장(모바일 기록 유실 방지)
@@ -2376,7 +2422,7 @@ function initApp(){
   migrateChapterKeys();
   migrateAnswerData();
   buildBookList();updateStats();updateMemoCount();renderMemoPanel();initMemoResize();
-  renderDashboard();updateNavMini();
+  renderDashboard();updateNavMini();updateLastSyncTxt();
 }
 
 function buildBookList(){
