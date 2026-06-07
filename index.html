@@ -917,7 +917,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260607-1020';
+const APP_VERSION='20260607-1129';
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -1031,7 +1031,8 @@ async function loadFromFirestore(){
         /* 개수는 같지만 로컬이 더 최신인 경우(같은 문제 재답/수정)도 전파 */
         ||_hasNewerLocal(ca,answerData,'timestamp')||_hasNewerLocal(cv,viewData,'lastViewed')||_hasNewerLocal(cr,repeatMarks,'ts')||_studyLogNewer(csl,msl);
       wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;
-      if(upload){_saveLocal();await saveToFirestore();showSync('synced','✅ 머지 완료');return;}
+      _saveLocal();/* 머지 결과는 항상 로컬에 영속화 — 순수 pull(다른 기기 기록만 받은 경우)도 저장돼 새로고침 후에도 유지 */
+      if(upload){await saveToFirestore();showSync('synced','✅ 머지 완료');return;}
     }else{
       if(wrongNotes.length||memoNotes.length||Object.keys(viewData).length||Object.keys(answerData).length||Object.keys(repeatMarks).length||mnemonics.length||examHistory.length||Object.keys(studyLog).length||userExpl.length){await saveToFirestore();showSync('synced','✅ 데이터 이전 완료');return;}
     }
@@ -1059,8 +1060,30 @@ async function saveToFirestore(retryCount){
   if(syncInFlight){pendingSync=true;return;}/* 동시 쓰기는 1건으로 직렬화(flush·디바운스·머지업로드 경합/3중 set() 방지) */
   syncInFlight=true;pendingSync=false;
   try{
+    const ref=db.collection('users').doc(currentUser.uid);
+    /* 🛡️ 클로버(덮어쓰기) 방지: set({...},{merge:true})는 jm_ 필드를 '통째로' 교체하므로,
+       쓰기 직전 클라우드 현재값을 읽어 union 머지한 뒤 써야 다른 기기의 더 최신 기록을 절대 안 지운다.
+       (이게 빠져 있어, 상대 기기 기록을 못 받은 stale 로컬이 '저장&동기화'를 누르면 클라우드를 비워버렸음) */
+    try{
+      const cd=await ref.get();
+      if(cd.exists){const c=cd.data()||{};
+        wrongNotes=_mergeArrById(c.jm_wrongNotes,wrongNotes);
+        memoNotes=_mergeArrById(c.jm_memoNotes,memoNotes);
+        mnemonics=_mergeArrById(c.jm_mnemonics,mnemonics);
+        examHistory=_mergeArrById(c.jm_examHistory,examHistory);
+        userExpl=_mergeArrById(c.jm_userExpl,userExpl);
+        viewData=_mergeObjByKey(c.jm_viewData,viewData,'lastViewed');
+        answerData=_mergeObjByKey(c.jm_answerData,answerData,'timestamp');
+        repeatMarks=_mergeObjByKey(c.jm_repeatMarks,repeatMarks,'ts');
+        studyLog=_mergeStudyLog(c.jm_studyLog,studyLog);
+        examUsed={...(c.jm_examUsed||{}),...examUsed};
+        if(typeof c.jm_dailyGoal==='number'&&c.jm_dailyGoal>0&&dailyGoal===20)dailyGoal=c.jm_dailyGoal;
+        if(c.jm_resetToken===RESET_TOKEN){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}}
+        _saveLocal();
+      }
+    }catch(preErr){/* 오프라인 등 사전 읽기 실패 → 로컬 그대로 큐잉(다음 온라인때 정상화) */}
     const rt=localStorage.getItem(PREFIX+'_resetToken');/* 토큰을 클라우드에도 기록해 다른 기기의 재초기화 방지 */
-    await db.collection('users').doc(currentUser.uid).set({jm_wrongNotes:wrongNotes,jm_memoNotes:memoNotes,jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:userExpl,jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:memoNotes,jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:userExpl,jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     setLastSync(Date.now());
   }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패');pendingSync=true;if(retryCount<3){setTimeout(()=>saveToFirestore(retryCount+1),2000*(retryCount+1));}}
   finally{syncInFlight=false;}
