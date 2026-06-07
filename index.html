@@ -252,7 +252,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 .sync-indicator{position:fixed;top:52px;right:12px;z-index:9999;padding:5px 12px;border-radius:9px;font-size:11px;font-weight:700;display:none;box-shadow:var(--shadow);align-items:center}
 /* 💾 항상 보이는 우측 상단 저장&동기화 버튼 (사이드바 하단 버튼이 모바일 브라우저 툴바에 가려지는 문제 회피) */
-.sync-fab{position:fixed;top:8px;right:10px;z-index:9998;height:38px;padding:0 13px;border-radius:19px;border:none;background:linear-gradient(135deg,var(--lime,#b8f24a),var(--lime2,#a3e63a));color:var(--ink,#0e1813);font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(184,242,74,.35);display:flex;align-items:center;gap:5px;font-family:inherit}
+.sync-fab{position:fixed;top:9px;right:10px;z-index:9998;height:31px;padding:0 10px;border-radius:16px;border:none;background:linear-gradient(135deg,var(--lime,#b8f24a),var(--lime2,#a3e63a));color:var(--ink,#0e1813);font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 3px 11px rgba(184,242,74,.32);display:flex;align-items:center;gap:4px;font-family:inherit}
 .sync-fab:hover{filter:brightness(1.05)}
 .sync-fab:active{transform:scale(.96)}
 .sync-fab:disabled{opacity:.6;cursor:default}
@@ -924,7 +924,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260607-1526';
+const APP_VERSION='20260607-1533';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
