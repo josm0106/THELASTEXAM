@@ -917,7 +917,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260607-1217';
+const APP_VERSION='20260607-1245';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -1016,6 +1016,52 @@ function _mergeObjByKey(a,b,timeKey){const out={...(a||{})};for(const k of Objec
    업로드 후엔 클라우드가 같아져 다음 로드때 false가 되므로 무한 업로드 루프 없음 */
 function _hasNewerLocal(cloud,local,timeKey){const c=cloud||{},l=local||{};for(const k of Object.keys(l)){if(c[k]===undefined)continue;if((((l[k]||{})[timeKey])||0)>(((c[k]||{})[timeKey])||0))return true;}return false;}
 function _studyLogNewer(cloud,merged){const c=cloud||{},m=merged||{};for(const k of Object.keys(m)){const a=m[k]||{},b=c[k]||{};if((a.solved||0)>(b.solved||0)||(a.correct||0)>(b.correct||0))return true;}return false;}
+/* ===== 🖼️ 이미지(내 해설/메모 사진) 별도 저장 =====
+   Firestore 문서 1개는 1MB 한도라, 이미지를 메인 문서에 넣으면 몇 장만 쌓여도 저장이 통째로 실패함.
+   → 이미지는 users/{uid}/blobs/{id} 서브컬렉션에 '항목당 1문서'로 저장(각 ~300KB<1MB), 메인 문서엔 _img 플래그만. */
+const _uploadedBlobs=new Set();/* 이미 클라우드에 올라간 blob id (재업로드 방지). 로드 시 채워짐 */
+function _blobId(type,id){return type+'_'+id;}
+/* id로 union 병합하되 로컬의 실제 이미지(img)는 보존. 클라우드 항목은 _img 플래그만 있고 img는 blob에서 따로 가져옴 */
+function _mergeItemsKeepImg(cloudArr,localArr){
+  const out={};const t=x=>((x&&(x.edited||x.created))||0);
+  (cloudArr||[]).forEach(it=>{if(it&&it.id!=null)out[it.id]={...it};});
+  (localArr||[]).forEach(it=>{if(!it||it.id==null)return;const cur=out[it.id];
+    if(!cur){out[it.id]={...it};return;}
+    let base=t(it)>=t(cur)?{...cur,...it}:{...it,...cur};/* 더 최신 메타데이터 우선 */
+    if(it.img)base.img=it.img;else if(cur.img)base.img=cur.img;/* 실제 이미지 보존 */
+    out[it.id]=base;});
+  return Object.values(out);
+}
+/* 메인 문서에 쓸 경량 버전 — img(base64) 제거하고 _img:1 플래그만 남김 */
+function _lightItems(arr){return (arr||[]).map(it=>{const o={...it};if(o.img){delete o.img;o._img=1;}else{delete o.img;delete o._img;}return o;});}
+/* 로컬에 이미지가 있는 항목을 blob으로 업로드(아직 클라우드에 없는 것만). 전부 성공하면 true */
+async function _uploadBlobs(){
+  if(!currentUser)return false;
+  const col=db.collection('users').doc(currentUser.uid).collection('blobs');
+  const list=[];
+  (userExpl||[]).forEach(e=>{if(e&&e.img)list.push([_blobId('e',e.id),e.img]);});
+  (memoNotes||[]).forEach(m=>{if(m&&m.img)list.push([_blobId('m',m.id),m.img]);});
+  let ok=true;
+  for(const [bid,img] of list){
+    if(_uploadedBlobs.has(bid))continue;
+    if(typeof img!=='string'||img.length>1040000){console.warn('[blob] 이미지가 너무 커서 클라우드 저장 불가',bid,img&&img.length);ok=false;continue;}
+    try{await col.doc(bid).set({img});_uploadedBlobs.add(bid);}
+    catch(e){console.error('[blob] 업로드 실패',bid,e.code||e.message);ok=false;}
+  }
+  return ok;
+}
+/* _img 플래그가 있는데 메모리에 img가 없는 항목(다른 기기가 올린 것·새 기기)의 이미지를 blob에서 가져와 붙임 */
+async function _fetchBlobs(){
+  if(!currentUser)return;
+  const col=db.collection('users').doc(currentUser.uid).collection('blobs');
+  const need=[];
+  (userExpl||[]).forEach(e=>{if(e&&e._img&&!e.img)need.push(['e',e]);});
+  (memoNotes||[]).forEach(m=>{if(m&&m._img&&!m.img)need.push(['m',m]);});
+  await Promise.all(need.map(async ([type,it])=>{
+    const bid=_blobId(type,it.id);
+    try{const d=await col.doc(bid).get();if(d.exists&&d.data()&&d.data().img){it.img=d.data().img;_uploadedBlobs.add(bid);}}catch(e){}
+  }));
+}
 async function loadFromFirestore(){
   if(!currentUser)return;showSync('syncing','☁️ 동기화 중...');loadLocalData();
   try{
@@ -1026,8 +1072,8 @@ async function loadFromFirestore(){
       if(data.jm_resetToken===RESET_TOKEN){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}}
       const cw=data.jm_wrongNotes||[],cm=data.jm_memoNotes||[],cv=data.jm_viewData||{},ca=data.jm_answerData||{},cr=data.jm_repeatMarks||{};
       const cmn=data.jm_mnemonics||[],csl=data.jm_studyLog||{},ceh=data.jm_examHistory||[],cdg=data.jm_dailyGoal,cue=data.jm_userExpl||[],ceu=data.jm_examUsed||{};
-      const mw=_mergeArrById(cw,wrongNotes),mm=_mergeArrById(cm,memoNotes),mv=_mergeObjByKey(cv,viewData,'lastViewed'),ma=_mergeObjByKey(ca,answerData,'timestamp'),mr=_mergeObjByKey(cr,repeatMarks,'ts');
-      const mmn=_mergeArrById(cmn,mnemonics),msl=_mergeStudyLog(csl,studyLog),meh=_mergeArrById(ceh,examHistory),mue=_mergeArrById(cue,userExpl);
+      const mw=_mergeArrById(cw,wrongNotes),mm=_mergeItemsKeepImg(cm,memoNotes),mv=_mergeObjByKey(cv,viewData,'lastViewed'),ma=_mergeObjByKey(ca,answerData,'timestamp'),mr=_mergeObjByKey(cr,repeatMarks,'ts');
+      const mmn=_mergeArrById(cmn,mnemonics),msl=_mergeStudyLog(csl,studyLog),meh=_mergeArrById(ceh,examHistory),mue=_mergeItemsKeepImg(cue,userExpl);
       const meu={...ceu,...examUsed};/* 출제이력 합집합(키=qKey) */
       const mdg=(typeof cdg==='number'&&cdg>0)?cdg:dailyGoal;
       const upload=mw.length>cw.length||mm.length>cm.length||Object.keys(mv).length>Object.keys(cv).length||Object.keys(ma).length>Object.keys(ca).length||Object.keys(mr).length>Object.keys(cr).length||mmn.length>cmn.length||meh.length>ceh.length||Object.keys(msl).length>Object.keys(csl).length||mue.length>cue.length||Object.keys(meu).length>Object.keys(ceu).length
@@ -1035,6 +1081,7 @@ async function loadFromFirestore(){
         ||_hasNewerLocal(ca,answerData,'timestamp')||_hasNewerLocal(cv,viewData,'lastViewed')||_hasNewerLocal(cr,repeatMarks,'ts')||_studyLogNewer(csl,msl);
       wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;
       _saveLocal();/* 머지 결과는 항상 로컬에 영속화 — 순수 pull(다른 기기 기록만 받은 경우)도 저장돼 새로고침 후에도 유지 */
+      await _fetchBlobs();/* 다른 기기가 올린 이미지(_img 플래그) 가져와 붙임 */_saveLocal();
       if(upload){await saveToFirestore();showSync('synced','✅ 머지 완료');return;}
     }else{
       if(wrongNotes.length||memoNotes.length||Object.keys(viewData).length||Object.keys(answerData).length||Object.keys(repeatMarks).length||mnemonics.length||examHistory.length||Object.keys(studyLog).length||userExpl.length){await saveToFirestore();showSync('synced','✅ 데이터 이전 완료');return;}
@@ -1059,22 +1106,21 @@ function syncToCloud(){_saveLocal();pendingSync=true;if(!firestoreReady||!curren
 /* 디바운스(1.5s)를 기다리지 않고 즉시 클라우드로 밀어냄 — 화면 숨김/탭 종료 직전에 호출. 바뀐 게 없으면 no-op */
 function flushSync(){if(firestoreReady&&currentUser&&pendingSync){clearTimeout(syncDebounceTimer);saveToFirestore(0);}}
 async function saveToFirestore(retryCount){
-  if(retryCount==null)retryCount=0;if(!currentUser)return;
-  if(syncInFlight){pendingSync=true;return;}/* 동시 쓰기는 1건으로 직렬화(flush·디바운스·머지업로드 경합/3중 set() 방지) */
-  syncInFlight=true;pendingSync=false;
+  if(retryCount==null)retryCount=0;if(!currentUser)return false;
+  if(syncInFlight){pendingSync=true;return false;}/* 동시 쓰기는 1건으로 직렬화(flush·디바운스·머지업로드 경합/3중 set() 방지) */
+  syncInFlight=true;pendingSync=false;let ok=false;
   try{
     const ref=db.collection('users').doc(currentUser.uid);
     /* 🛡️ 클로버(덮어쓰기) 방지: set({...},{merge:true})는 jm_ 필드를 '통째로' 교체하므로,
-       쓰기 직전 클라우드 현재값을 읽어 union 머지한 뒤 써야 다른 기기의 더 최신 기록을 절대 안 지운다.
-       (이게 빠져 있어, 상대 기기 기록을 못 받은 stale 로컬이 '저장&동기화'를 누르면 클라우드를 비워버렸음) */
+       쓰기 직전 클라우드 현재값을 읽어 union 머지한 뒤 써야 다른 기기의 더 최신 기록을 절대 안 지운다. */
     try{
       const cd=await ref.get();
       if(cd.exists){const c=cd.data()||{};
         wrongNotes=_mergeArrById(c.jm_wrongNotes,wrongNotes);
-        memoNotes=_mergeArrById(c.jm_memoNotes,memoNotes);
+        memoNotes=_mergeItemsKeepImg(c.jm_memoNotes,memoNotes);
         mnemonics=_mergeArrById(c.jm_mnemonics,mnemonics);
         examHistory=_mergeArrById(c.jm_examHistory,examHistory);
-        userExpl=_mergeArrById(c.jm_userExpl,userExpl);
+        userExpl=_mergeItemsKeepImg(c.jm_userExpl,userExpl);
         viewData=_mergeObjByKey(c.jm_viewData,viewData,'lastViewed');
         answerData=_mergeObjByKey(c.jm_answerData,answerData,'timestamp');
         repeatMarks=_mergeObjByKey(c.jm_repeatMarks,repeatMarks,'ts');
@@ -1085,11 +1131,14 @@ async function saveToFirestore(retryCount){
         _saveLocal();
       }
     }catch(preErr){/* 오프라인 등 사전 읽기 실패 → 로컬 그대로 큐잉(다음 온라인때 정상화) */}
+    /* 🖼️ 이미지는 blob 서브컬렉션으로 따로 업로드 → 메인 문서엔 경량(_img 플래그)만 기록해 1MB 한도 회피 */
+    await _uploadBlobs();
     const rt=localStorage.getItem(PREFIX+'_resetToken');/* 토큰을 클라우드에도 기록해 다른 기기의 재초기화 방지 */
-    await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:memoNotes,jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:userExpl,jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    setLastSync(Date.now());
+    await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:_lightItems(memoNotes),jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:_lightItems(userExpl),jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    setLastSync(Date.now());ok=true;
   }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패');pendingSync=true;if(retryCount<3){setTimeout(()=>saveToFirestore(retryCount+1),2000*(retryCount+1));}}
   finally{syncInFlight=false;}
+  return ok;
 }
 /* 🗑️ 1회성 전체 기록 초기화 — 토큰이 일치하면 건너뜀. 클라우드를 비운 뒤에만 토큰 기록(미완료 시 다음 로드때 재시도) */
 const RESET_TOKEN='reset-20260602';
@@ -1139,14 +1188,17 @@ async function manualSync(){
   try{
     _saveLocal();                                  /* 메모리 → 로컬 보장 */
     clearTimeout(syncDebounceTimer);
-    /* ① 업로드 강제 — 진행 중이면 잠깐 대기 후 재시도(최대 ~0.7초) */
-    for(let i=0;i<4;i++){if(!syncInFlight){await saveToFirestore(0);break;}await new Promise(r=>setTimeout(r,180));}
+    /* ① 업로드 강제 — 진행 중이면 잠깐 대기 후 재시도(최대 ~0.7초). 실제 성공여부를 saveOk로 받음 */
+    let saveOk=null;
+    for(let i=0;i<4;i++){if(!syncInFlight){saveOk=await saveToFirestore(0);break;}await new Promise(r=>setTimeout(r,180));}
     /* ② 다운로드 강제 — 15초 스로틀/조기반환 우회하고 직접 머지 */
     lastPullAt=0;
     await loadFromFirestore();
     /* ③ 현재 화면 다시 그림 */
     refreshCurrentView();
-    setLastSync(Date.now());showSync('synced','✅ 저장 & 동기화 완료');
+    setLastSync(Date.now());
+    if(saveOk===false)showSync('error','❌ 일부 저장 실패 — 이미지가 너무 크거나 네트워크 문제. 다시 시도해 주세요');
+    else showSync('synced','✅ 저장 & 동기화 완료');
   }catch(e){console.error('[manualSync] 실패',e);showSync('error','❌ 동기화 실패 — 잠시 후 다시');}
   finally{if(btn)btn.disabled=false;}
 }
