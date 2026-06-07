@@ -917,7 +917,10 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260607-1129';
+const APP_VERSION='20260607-1217';
+/* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
+   새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
+function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
 async function _checkForUpdate(){
   try{
     const r=await fetch('./index.html?_='+Date.now(),{cache:'no-store'});
@@ -929,8 +932,8 @@ async function _checkForUpdate(){
       div.style.cssText='position:fixed;top:14px;right:14px;background:linear-gradient(135deg,#0c4a37,#1f9b6d);color:#fff;padding:14px 20px;border-radius:12px;z-index:99999;font:14px sans-serif;box-shadow:0 8px 26px rgba(12,50,37,.30);cursor:pointer;user-select:none';
       div.title='클릭하면 즉시 새로고침';document.body.appendChild(div);
       let cnt=5;const render=()=>{div.innerHTML='🔄 새 버전 적용 중... <b>'+cnt+'초</b><br><span style=font-size:11px;opacity:.85>클릭하면 즉시 적용</span>';};
-      render();div.onclick=()=>location.reload(true);
-      const tm=setInterval(()=>{cnt--;if(cnt<=0){clearInterval(tm);location.reload(true);}else render();},1000);
+      render();div.onclick=()=>_hardReload(m[1]);
+      const tm=setInterval(()=>{cnt--;if(cnt<=0){clearInterval(tm);_hardReload(m[1]);}else render();},1000);
     }
   }catch(e){console.warn('[Update] 체크 실패:',e);}
 }
