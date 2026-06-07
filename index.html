@@ -250,7 +250,12 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .login-box .login-error{color:var(--wrong);font-size:12px;text-align:center;margin-top:12px;min-height:18px;font-weight:600}
 .login-box .login-hint{color:var(--text3);font-size:11px;text-align:center;margin-top:14px;line-height:1.6}
 
-.sync-indicator{position:fixed;top:10px;right:12px;z-index:9999;padding:5px 12px;border-radius:9px;font-size:11px;font-weight:700;display:none;box-shadow:var(--shadow);align-items:center}
+.sync-indicator{position:fixed;top:52px;right:12px;z-index:9999;padding:5px 12px;border-radius:9px;font-size:11px;font-weight:700;display:none;box-shadow:var(--shadow);align-items:center}
+/* 💾 항상 보이는 우측 상단 저장&동기화 버튼 (사이드바 하단 버튼이 모바일 브라우저 툴바에 가려지는 문제 회피) */
+.sync-fab{position:fixed;top:8px;right:10px;z-index:9998;height:38px;padding:0 13px;border-radius:19px;border:none;background:linear-gradient(135deg,var(--lime,#b8f24a),var(--lime2,#a3e63a));color:var(--ink,#0e1813);font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(184,242,74,.35);display:flex;align-items:center;gap:5px;font-family:inherit}
+.sync-fab:hover{filter:brightness(1.05)}
+.sync-fab:active{transform:scale(.96)}
+.sync-fab:disabled{opacity:.6;cursor:default}
 .sync-indicator.syncing{display:flex;background:var(--accent);color:#fff}
 .sync-indicator.synced{display:flex;background:var(--correct);color:#fff}
 .sync-indicator.error{display:flex;background:var(--wrong);color:#fff}
@@ -860,6 +865,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
   </div>
 </div>
 <div class="sync-indicator" id="syncIndicator"></div>
+<button class="sync-fab" id="syncFab" onclick="manualSync()" title="저장 & 동기화">💾 저장</button>
 <button class="mobile-memo-fab" onclick="toggleMemo()">📋</button>
 <button class="hamburger" onclick="toggleSidebar()">☰</button>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -918,7 +924,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260607-1510';
+const APP_VERSION='20260607-1526';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -1185,7 +1191,7 @@ function refreshCurrentView(){
 async function manualSync(){
   if(!currentUser){showSync('error','로그인이 필요합니다');return;}
   if(navigator.onLine===false){showSync('error','❌ 오프라인 — 인터넷 연결 확인');return;}
-  const btn=document.getElementById('manualSyncBtn');if(btn)btn.disabled=true;
+  const btns=[document.getElementById('manualSyncBtn'),document.getElementById('syncFab')];btns.forEach(b=>{if(b)b.disabled=true;});
   showSync('syncing','☁️ 저장 & 동기화 중...');
   try{
     _saveLocal();                                  /* 메모리 → 로컬 보장 */
@@ -1202,7 +1208,7 @@ async function manualSync(){
     if(saveOk===false)showSync('error','❌ 일부 저장 실패 — 이미지가 너무 크거나 네트워크 문제. 다시 시도해 주세요');
     else showSync('synced','✅ 저장 & 동기화 완료');
   }catch(e){console.error('[manualSync] 실패',e);showSync('error','❌ 동기화 실패 — 잠시 후 다시');}
-  finally{if(btn)btn.disabled=false;}
+  finally{btns.forEach(b=>{if(b)b.disabled=false;});}
 }
 /* 📲 클라우드 당겨오기(비파괴적) — 다른 기기(아이패드·폰)의 새 기록을 이미 열린 탭에도 반영.
    안전가드 모두 통과할 때만 머지하며, 막힌 상태(보류 업로드/시작 실패)는 스스로 복구 */
