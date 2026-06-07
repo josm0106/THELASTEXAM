@@ -923,7 +923,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260607-1545';
+const APP_VERSION='20260607-1622';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -1069,8 +1069,16 @@ async function _fetchBlobs(){
     try{const d=await col.doc(bid).get();if(d.exists&&d.data()&&d.data().img){it.img=d.data().img;_uploadedBlobs.add(bid);}}catch(e){}
   }));
 }
-async function loadFromFirestore(){
-  if(!currentUser)return;showSync('syncing','☁️ 동기화 중...');loadLocalData();
+/* 데이터가 실제로 바뀌었는지 가볍게 판별(이미지 제외, 개수+핵심 타임스탬프) — 변화 없으면 재렌더·표시를 건너뛰어 불필요한 새로고침 방지 */
+function _dataSig(){
+  const oc=o=>Object.keys(o||{}).length;
+  const mx=(o,k)=>{let m=0;for(const x in (o||{})){const t=(o[x]&&o[x][k])||0;if(t>m)m=t;}return m;};
+  return [oc(answerData),mx(answerData,'timestamp'),oc(viewData),mx(viewData,'lastViewed'),oc(repeatMarks),mx(repeatMarks,'ts'),(wrongNotes||[]).length,(memoNotes||[]).length,(mnemonics||[]).length,(examHistory||[]).length,(userExpl||[]).length,oc(examUsed),oc(studyLog),dailyGoal].join('|');
+}
+/* quiet=true(주기적 자동 당김)이면 변화가 있을 때만 화면 갱신/표시 → 평소엔 조용함. 변경여부(boolean) 반환 */
+async function loadFromFirestore(quiet){
+  if(!currentUser)return false;if(!quiet)showSync('syncing','☁️ 동기화 중...');loadLocalData();
+  const sigBefore=_dataSig();let changed=false;
   try{
     const d=await db.collection('users').doc(currentUser.uid).get();
     if(d.exists){
@@ -1089,12 +1097,18 @@ async function loadFromFirestore(){
       wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;
       _saveLocal();/* 머지 결과는 항상 로컬에 영속화 — 순수 pull(다른 기기 기록만 받은 경우)도 저장돼 새로고침 후에도 유지 */
       await _fetchBlobs();/* 다른 기기가 올린 이미지(_img 플래그) 가져와 붙임 */_saveLocal();
-      if(upload){await saveToFirestore();showSync('synced','✅ 머지 완료');return;}
+      changed=_dataSig()!==sigBefore;/* 실제로 바뀐 게 있는지 */
+      if(upload)await saveToFirestore();
+      setLastSync(Date.now());
+      if(!quiet)showSync('synced',upload?'✅ 머지 완료':'✅ 동기화 완료');else if(changed)showSync('synced','✅ 새 기록 받음');
+      return changed;
     }else{
-      if(wrongNotes.length||memoNotes.length||Object.keys(viewData).length||Object.keys(answerData).length||Object.keys(repeatMarks).length||mnemonics.length||examHistory.length||Object.keys(studyLog).length||userExpl.length){await saveToFirestore();showSync('synced','✅ 데이터 이전 완료');return;}
+      if(wrongNotes.length||memoNotes.length||Object.keys(viewData).length||Object.keys(answerData).length||Object.keys(repeatMarks).length||mnemonics.length||examHistory.length||Object.keys(studyLog).length||userExpl.length){await saveToFirestore();setLastSync(Date.now());if(!quiet)showSync('synced','✅ 데이터 이전 완료');return changed;}
     }
-    setLastSync(Date.now());showSync('synced','✅ 동기화 완료');
-  }catch(e){console.error('[Firestore] 로드 실패:',e);showSync('error','❌ 동기화 실패');}
+    setLastSync(Date.now());
+    if(!quiet)showSync('synced','✅ 동기화 완료');
+    return changed;
+  }catch(e){console.error('[Firestore] 로드 실패:',e);if(!quiet)showSync('error','❌ 동기화 실패');return false;}
 }
 function _saveLocal(){
   localStorage.setItem(PREFIX+'_wrong',JSON.stringify(wrongNotes));
@@ -1213,13 +1227,14 @@ async function manualSync(){
    안전가드 모두 통과할 때만 머지하며, 막힌 상태(보류 업로드/시작 실패)는 스스로 복구 */
 function pullFromCloud(){
   if(!currentUser||navigator.onLine===false)return;
-  if(!firestoreReady){loadFromFirestore().then(()=>{firestoreReady=true;}).catch(()=>{});return;}/* 시작 시 로드 실패한 탭 자가복구 */
+  if(!firestoreReady){loadFromFirestore(true).then(()=>{firestoreReady=true;}).catch(()=>{});return;}/* 시작 시 로드 실패한 탭 자가복구 */
   if(syncInFlight)return;
   if(pendingSync){flushSync();return;}            /* 보류된 로컬 변경을 먼저 업로드 → 다음 주기에 당김(머지 부활 방지) */
   if(explEditOpen||editingExplId)return;          /* 내 해설 편집기 열려있으면 보류 */
   if(Date.now()-lastPullAt<15000)return;          /* 15초 스로틀 */
   lastPullAt=Date.now();
-  loadFromFirestore().then(()=>{refreshCurrentView();}).catch(()=>{});  /* 현재 보고 있는 화면까지 갱신 */
+  /* 조용히(quiet) 당김 — 다른 기기가 실제로 뭔가 바꿨을 때만 화면을 다시 그림(평소엔 티 안 나게) */
+  loadFromFirestore(true).then((changed)=>{if(changed)refreshCurrentView();}).catch(()=>{});
 }
 /* 📲 화면 전환 핸들러
    ① 숨김(잠금/앱전환/탭종료) 직전 → 디바운스 기다리지 말고 즉시 클라우드 저장(모바일 기록 유실 방지)
@@ -1228,8 +1243,8 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){flushSync();return;}
   pullFromCloud();
 });
-/* ⏱️ 항상 화면에 보이는 탭(멀티 모니터 PC 등)은 visibilitychange가 안 일어나므로 60초마다 주기적으로 당김 */
-setInterval(()=>{if(document.visibilityState==='visible')pullFromCloud();},60000);
+/* ⏱️ 항상 화면에 보이는 탭은 visibilitychange가 안 일어나므로 120초마다 조용히 당김(변화 있을 때만 화면 갱신) */
+setInterval(()=>{if(document.visibilityState==='visible')pullFromCloud();},120000);
 window.addEventListener('pagehide',flushSync);    /* bfcache 친화적, beforeunload보다 모바일서 신뢰성 높음 */
 </script>
 
