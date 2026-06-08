@@ -923,7 +923,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260608-1837';
+const APP_VERSION='20260608-2029';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -2875,8 +2875,8 @@ function resetView(k){delete viewData[k];syncToCloud();buildBookList();if(curren
 function resetAllViews(){if(!confirm('전체 조회수를 초기화하시겠습니까?'))return;viewData={};syncToCloud();buildBookList();updateStats();}
 function resetOneAnswer(){if(!currentQ)return;const k=getQKey(currentQ);if(!answerData[k])return;delete answerData[k];syncToCloud();renderQuiz();buildBookList();updateStats();updateMemoCount();}
 function resetAllAnswers(){if(!confirm('모든 풀이 기록을 초기화하시겠습니까?'))return;answerData={};syncToCloud();buildBookList();updateStats();if(viewMode==='grid'&&currentSectionIdx>=0)renderGrid(currentSectionIdx);}
-function addMemoNote(){const i=document.getElementById('memoNoteInput'),t=i.value.trim();if((!t&&!pendingMemoImg)||!currentQ)return;const k=getQKey(currentQ);memoNotes.push({id:Date.now(),qKey:k,section:currentQ.section,qNum:currentQ.num,qText:currentQ.question.substring(0,50),text:t,img:pendingMemoImg||null,created:Date.now()});i.value='';pendingMemoImg=null;syncToCloud();renderQuiz();updateMemoCount();renderMemoPanel();}
-function deleteNote(type,id){if(type==='wrong')wrongNotes=wrongNotes.filter(n=>n.id!==id);else memoNotes=memoNotes.filter(n=>n.id!==id);syncToCloud();if(currentQ)renderQuiz();buildBookList();updateStats();updateMemoCount();renderMemoPanel();}
+function addMemoNote(){const q=_explCurQ();const i=document.getElementById('memoNoteInput'),t=i?i.value.trim():'';if((!t&&!pendingMemoImg)||!q)return;const k=getQKey(q);memoNotes.push({id:Date.now(),qKey:k,section:q.section,qNum:q.num,qText:(q.question||'').substring(0,50),text:t,img:pendingMemoImg||null,created:Date.now()});if(i)i.value='';pendingMemoImg=null;syncToCloud();_explRerender();updateMemoCount();renderMemoPanel();}
+function deleteNote(type,id){if(type==='wrong')wrongNotes=wrongNotes.filter(n=>n.id!==id);else memoNotes=memoNotes.filter(n=>n.id!==id);syncToCloud();_explRerender();buildBookList();updateStats();updateMemoCount();renderMemoPanel();}
 function _setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 function updateStats(){const wc=Object.values(answerData).filter(a=>!a.correct).length;const cc=Object.values(answerData).filter(a=>a.correct).length;_setTxt('statTotal',QUESTIONS.length);_setTxt('statCorrect',cc);_setTxt('statWrong',wc);_setTxt('statNotes',memoNotes.length);_setTxt('wrongCount',wc);}
 function updateMemoCount(){document.getElementById('memoCount').textContent=memoNotes.length;updateRepeatCount();}
@@ -3199,7 +3199,7 @@ function deleteMnem(id){mnemonics=mnemonics.filter(n=>n.id!==id);syncToCloud();i
 /* ---------- 내 해설(보충) — 텍스트 + 사진 ---------- */
 /* 편집 대상 문제 / 재렌더 — 퀴즈면 currentQ+renderQuiz, 모의고사 다시보기면 explHostQ+그 화면 재렌더 */
 function _explCurQ(){return explHostQ||currentQ;}
-function _explRerender(){if(explRerenderFn){explRerenderFn();return;}if(currentQ)renderQuiz();}
+function _explRerender(){if(explRerenderFn){const ec=document.getElementById('examContainer');if(ec&&ec.style.display!=='none'){explRerenderFn();return;}explHostQ=null;explRerenderFn=null;}if(currentQ)renderQuiz();}
 function toggleExplEdit(){explEditOpen=!explEditOpen;editingExplId=null;pendingExplImg=null;_explRerender();}
 function editExpl(id){const n=userExpl.find(x=>x.id===id);if(!n)return;editingExplId=id;explEditOpen=true;pendingExplImg=n.img||null;_explRerender();}
 function cancelExplEdit(){explEditOpen=false;editingExplId=null;pendingExplImg=null;_explRerender();}
@@ -3322,7 +3322,7 @@ function _balancedPick(list,n){
   while(picked.length<n&&go){go=false;for(let gi=0;gi<genres.length;gi++){if(picked.length>=n)break;const a=byG[genres[gi]];if(a.length){picked.push(a.pop());go=true;}}}
   return picked;
 }
-function _examShow(){['welcomeScreen','gridContainer','quizContainer','flashContainer'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});document.getElementById('examContainer').style.display='block';document.getElementById('backBtn').style.display='none';document.getElementById('headerProgress').textContent='';setNav('exam');if(window.innerWidth<=768)closeSidebarMobile();}
+function _examShow(){['welcomeScreen','gridContainer','quizContainer','flashContainer'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});const _qc=document.getElementById('quizContainer');if(_qc)_qc.innerHTML='';/* 숨겨진 퀴즈의 memoNoteInput/uexplInput 이 모의고사 입력을 가리지 않도록 비움(컨테이너 DOM 순서상 퀴즈가 앞) */explHostQ=null;explRerenderFn=null;document.getElementById('examContainer').style.display='block';document.getElementById('backBtn').style.display='none';document.getElementById('headerProgress').textContent='';setNav('exam');if(window.innerWidth<=768)closeSidebarMobile();}
 function openExamSetup(){
   viewMode='exam';currentQ=null;stopExamTimer();_examShow();
   document.getElementById('headerTitle').textContent='📝 모의고사';
@@ -3453,7 +3453,7 @@ function submitExam(auto){
   renderExamResult(res);document.getElementById('contentArea').scrollTop=0;
 }
 function renderExamResult(res){
-  explHostQ=null;explRerenderFn=null;explEditOpen=false;editingExplId=null;pendingExplImg=null;
+  explHostQ=null;explRerenderFn=null;explEditOpen=false;editingExplId=null;pendingExplImg=null;pendingMemoImg=null;
   const c=document.getElementById('examContainer');const pct=res.total?Math.round(res.correct/res.total*100):0;
   const items=_examItems(res);
   const grade=pct>=80?'🏆 우수':pct>=60?'👍 양호':pct>=40?'💪 분발':'🌱 기초부터';
@@ -3495,7 +3495,7 @@ function _findReviewQ(it){
   if(sec&&num!=null){q=QUESTIONS.find(x=>x.section===sec&&String(x.num)===String(num));if(q)return q;}
   return null;
 }
-function startExamReview(id,idx){const res=examHistory.find(r=>r.id===id);if(!res)return;explEditOpen=false;editingExplId=null;pendingExplImg=null;_examShow();document.getElementById('headerTitle').textContent='📖 모의고사 다시보기';try{renderExamReview(res,idx||0);}catch(e){console.error('[examReview] 렌더 실패:',e);openExamResult(id);return;}document.getElementById('contentArea').scrollTop=0;}
+function startExamReview(id,idx){const res=examHistory.find(r=>r.id===id);if(!res)return;explEditOpen=false;editingExplId=null;pendingExplImg=null;pendingMemoImg=null;_examShow();document.getElementById('headerTitle').textContent='📖 모의고사 다시보기';try{renderExamReview(res,idx||0);}catch(e){console.error('[examReview] 렌더 실패:',e);openExamResult(id);return;}document.getElementById('contentArea').scrollTop=0;}
 function renderExamReview(res,idx){
   explHostQ=null;explRerenderFn=null;
   const items=_examItems(res);const total=items.length;const c=document.getElementById('examContainer');
@@ -3517,13 +3517,14 @@ function renderExamReview(res,idx){
   (q.choices||[]).forEach((ch,i)=>{const n=i+1;let cls='choice-btn disabled';if(n===ans)cls+=' correct';else if(n===it.sel)cls+=' wrong';else cls+=' dimmed';h+='<button class="'+cls+'"><span class="choice-num">'+n+'</span><span class="choice-text">'+escapeHtml(ch)+'</span></button>';});
   h+='</div>';
   h+='<div style="font-size:12.5px;color:var(--text2);font-weight:700;margin:2px 0 12px">내 답: '+(it.sel?it.sel+'번':'미응답')+' · 정답: '+ans+'번</div>';
-  /* 원본 해설 + 내 해설 추가/수정 (퀴즈와 동일한 편집기를 이 화면에서도 쓰도록 컨텍스트 지정) */
+  /* 원본 해설 + 내 해설(추가/수정) + 메모 — 퀴즈와 동일한 편집기를 이 화면에서도 쓰도록 컨텍스트 지정 */
   explHostQ=q;explRerenderFn=function(){renderExamReview(res,idx);};
   h+=explanationBoxHtml(q);
+  h+=renderNoteSection(q);
   h+='<div class="quiz-nav"><button onclick="startExamReview('+res.id+','+(idx-1)+')"'+(idx===0?' disabled style="opacity:.4"':'')+'>← 이전</button>';
   h+=(idx<total-1)?'<button class="primary" onclick="startExamReview('+res.id+','+(idx+1)+')">다음 →</button>':'<button class="primary" onclick="openExamResult('+res.id+')">결과로 →</button>';
   h+='</div></div>';
-  c.innerHTML=h;renderPendingExplImg();
+  c.innerHTML=h;renderPendingExplImg();renderPendingImg();
 }
 
 /* ---------- 메모 이미지 붙여넣기 ---------- */
