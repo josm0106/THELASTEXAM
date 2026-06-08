@@ -923,7 +923,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260607-1758';
+const APP_VERSION='20260608-1837';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -2498,6 +2498,8 @@ let currentQ=null,currentQIdx=-1,currentSectionIdx=-1,wrongNotes=[],memoNotes=[]
 let viewMode='welcome',practiceSet=null,currentTopicGenre=null;
 /* ☕ 신규 기능 상태 */
 let mnemonics=[],studyLog={},examHistory=[],dailyGoal=20,pendingMemoImg=null,userExpl=[],pendingExplImg=null,explEditOpen=false,editingExplId=null;
+/* 내 해설 편집 컨텍스트 — 퀴즈 밖(모의고사 다시보기 등)에서도 같은 편집기를 재사용하기 위한 호스트 */
+let explHostQ=null,explRerenderFn=null;
 let flashDeck=[],flashIdx=0,flashFlipped=false,flashStudied=null,flashTitle='',flashTotal=0;
 let examQuestions=[],examIdx=0,examAnswers={},examStartTs=0,examTimerId=null,examLimitSec=0,examConfig={mode:'section',sections:[],chapters:[],count:20,timer:true};
 let examUsed={};/* 모의고사 무중복 한바퀴: 출제된 문제 qKey 누적(회차 단위) */
@@ -2742,7 +2744,7 @@ function openLightbox(src){const lb=document.createElement('div');lb.className='
 
 function loadQuestion(q,keepPractice){
   if(!keepPractice)practiceSet=null;
-  currentQ=q;currentQIdx=QUESTIONS.indexOf(q);viewMode='quiz';pendingMemoImg=null;pendingExplImg=null;explEditOpen=false;editingExplId=null;
+  currentQ=q;currentQIdx=QUESTIONS.indexOf(q);viewMode='quiz';pendingMemoImg=null;pendingExplImg=null;explEditOpen=false;editingExplId=null;explHostQ=null;explRerenderFn=null;
   saveLastPos(q);
   const k=getQKey(q);
   if(!viewData[k])viewData[k]={count:0,lastViewed:0};
@@ -2775,8 +2777,7 @@ function renderQuiz(){
   const q=currentQ,k=getQKey(q),c=document.getElementById('quizContainer');
   const v=viewData[k];let vh='';
   if(v&&v.count>0)vh='<div class="meta-views">👁 '+v.count+'회 · '+timeAgo(v.lastViewed)+' <button class="meta-minus-btn" onclick="decrementView(\''+k+'\')">−1</button><button class="meta-reset-btn" onclick="resetView(\''+k+'\')">✕</button></div>';
-  const isMarked=isMarkedForRepeat(k);
-  const repeatBtn='<button class="meta-repeat-btn" onclick="toggleRepeatMark(\''+k+'\')" title="'+(isMarked?'반복 표시 해제':'반복 표시 추가')+'" style="background:'+(isMarked?'var(--repeat)':'#fff')+';color:'+(isMarked?'#fff':'var(--text2)')+';border:1px solid '+(isMarked?'var(--repeat)':'var(--border2)')+';padding:4px 11px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;font-family:inherit">🔁 '+(isMarked?'반복 표시됨':'반복 표시')+'</button>';
+  const repeatBtn=repeatBtnHtml(k);
   let h='<div class="quiz-card">';
   if(practiceSet){const pqi=practiceSet.questions.indexOf(q)+1;h+='<div class="practice-bar"><span class="pb-ico">🎯</span><b>'+escapeHtml(practiceSet.name)+'</b> 주제풀이<span class="pb-prog">'+pqi+' / '+practiceSet.questions.length+'</span><button class="pb-exit" onclick="goBack()">✕ 나가기</button></div>';}
   h+='<div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">문제 '+q.num+'</div>'+repeatBtn+vh+'</div>';
@@ -2827,9 +2828,15 @@ function selectAnswer(num){
   buildBookList();updateStats();updateMemoCount();
 }
 function renderResult(q,sel){
-  const qAns=parseInt(q.answer,10);const ic=sel===qAns;const k=getQKey(q);
+  const qAns=parseInt(q.answer,10);const ic=sel===qAns;
   let h='<div class="result-banner '+(ic?'correct':'wrong')+'"><span style="flex:1"><span class="result-icon">'+(ic?'✅':'❌')+'</span> '+(ic?'정답입니다!':'오답 — 정답은 '+qAns+'번입니다')+'</span><button class="retry-btn" onclick="resetOneAnswer()">🔄 다시 풀기</button></div>';
-  h+='<div class="explanation-box"><h3><span>📖 해설</span><button class="expl-edit-btn" title="내 해설 추가·수정" onclick="toggleExplEdit()">✏️</button></h3>';
+  h+=explanationBoxHtml(q);
+  return h;
+}
+/* 📖 해설 박스 (원본 해설 + 내가 추가한 해설 + ✏️ 편집기) — 퀴즈·모의고사 다시보기 공용 */
+function explanationBoxHtml(q){
+  const k=getQKey(q);
+  let h='<div class="explanation-box"><h3><span>📖 해설</span><button class="expl-edit-btn" title="내 해설 추가·수정" onclick="toggleExplEdit()">✏️</button></h3>';
   // 원본 해설 (수정 불가)
   const hasBuiltin=q.explanation||q.reference||(q.explanation_images&&q.explanation_images.length);
   if(q.explanation)h+='<div class="expl-text">'+escapeHtml(q.explanation)+'</div>';
@@ -2875,7 +2882,11 @@ function updateStats(){const wc=Object.values(answerData).filter(a=>!a.correct).
 function updateMemoCount(){document.getElementById('memoCount').textContent=memoNotes.length;updateRepeatCount();}
 function updateRepeatCount(){const el=document.getElementById('repeatCount');if(el)el.textContent=Object.keys(repeatMarks).filter(k=>repeatMarks[k]&&repeatMarks[k].marked).length;}
 function isMarkedForRepeat(qKey){return !!(repeatMarks[qKey]&&repeatMarks[qKey].marked);}
-function toggleRepeatMark(qKey){const cur=isMarkedForRepeat(qKey);repeatMarks[qKey]={marked:!cur,ts:Date.now()};syncToCloud();updateRepeatCount();if(currentQ&&getQKey(currentQ)===qKey)renderQuiz();if(document.getElementById('memoPanel').classList.contains('open')&&currentMemoTab==='repeat')renderRepeatList();buildBookList();}
+/* 🔁 반복 표시 버튼 마크업 — 퀴즈·모의고사·다시보기에서 공용 */
+function repeatBtnHtml(k){const m=isMarkedForRepeat(k);return '<button class="meta-repeat-btn" data-rk="'+escapeHtml(k)+'" onclick="toggleRepeatMark(\''+k+'\')" title="'+(m?'반복 표시 해제':'반복 표시 추가')+'" style="background:'+(m?'var(--repeat)':'#fff')+';color:'+(m?'#fff':'var(--text2)')+';border:1px solid '+(m?'var(--repeat)':'var(--border2)')+';padding:4px 11px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;font-family:inherit">🔁 '+(m?'반복 표시됨':'반복 표시')+'</button>';}
+/* 반복 버튼을 전체 재렌더 없이 제자리에서 갱신(모의고사 진행/다시보기용) */
+function applyRepeatBtnStyle(b){const k=b.getAttribute('data-rk');const m=isMarkedForRepeat(k);b.style.background=m?'var(--repeat)':'#fff';b.style.color=m?'#fff':'var(--text2)';b.style.borderColor=m?'var(--repeat)':'var(--border2)';b.title=m?'반복 표시 해제':'반복 표시 추가';b.innerHTML='🔁 '+(m?'반복 표시됨':'반복 표시');}
+function toggleRepeatMark(qKey){const cur=isMarkedForRepeat(qKey);repeatMarks[qKey]={marked:!cur,ts:Date.now()};syncToCloud();updateRepeatCount();if(currentQ&&getQKey(currentQ)===qKey)renderQuiz();document.querySelectorAll('.meta-repeat-btn').forEach(function(b){if(b.getAttribute('data-rk')===qKey)applyRepeatBtnStyle(b);});if(document.getElementById('memoPanel').classList.contains('open')&&currentMemoTab==='repeat')renderRepeatList();buildBookList();}
 function showRepeatNote(){const p=document.getElementById('memoPanel');if(!p.classList.contains('open'))p.classList.add('open');switchMemoTab('repeat');document.getElementById('memoWrongPreview').style.display='none';}
 function renderRepeatList(){
   const markedKeys=Object.keys(repeatMarks).filter(k=>repeatMarks[k]&&repeatMarks[k].marked);
@@ -3186,19 +3197,22 @@ function toggleMnemFlip(el){if(el)el.classList.toggle('revealed');}
 function deleteMnem(id){mnemonics=mnemonics.filter(n=>n.id!==id);syncToCloud();if(currentQ)renderQuiz();}
 
 /* ---------- 내 해설(보충) — 텍스트 + 사진 ---------- */
-function toggleExplEdit(){explEditOpen=!explEditOpen;editingExplId=null;pendingExplImg=null;if(currentQ)renderQuiz();}
-function editExpl(id){const n=userExpl.find(x=>x.id===id);if(!n)return;editingExplId=id;explEditOpen=true;pendingExplImg=n.img||null;if(currentQ)renderQuiz();}
-function cancelExplEdit(){explEditOpen=false;editingExplId=null;pendingExplImg=null;if(currentQ)renderQuiz();}
+/* 편집 대상 문제 / 재렌더 — 퀴즈면 currentQ+renderQuiz, 모의고사 다시보기면 explHostQ+그 화면 재렌더 */
+function _explCurQ(){return explHostQ||currentQ;}
+function _explRerender(){if(explRerenderFn){explRerenderFn();return;}if(currentQ)renderQuiz();}
+function toggleExplEdit(){explEditOpen=!explEditOpen;editingExplId=null;pendingExplImg=null;_explRerender();}
+function editExpl(id){const n=userExpl.find(x=>x.id===id);if(!n)return;editingExplId=id;explEditOpen=true;pendingExplImg=n.img||null;_explRerender();}
+function cancelExplEdit(){explEditOpen=false;editingExplId=null;pendingExplImg=null;_explRerender();}
 function saveUserExpl(){
-  const i=document.getElementById('uexplInput');if(!currentQ)return;
+  const q=_explCurQ();if(!q)return;const i=document.getElementById('uexplInput');
   const t=i?i.value.trim():'';
   if(!t&&!pendingExplImg){alert('해설 내용이나 사진을 입력하세요');return;}
   if(editingExplId){const n=userExpl.find(x=>x.id===editingExplId);if(n){n.text=t;n.img=pendingExplImg||null;n.edited=Date.now();}}
-  else{const k=getQKey(currentQ);userExpl.push({id:Date.now(),qKey:k,section:currentQ.section,qNum:currentQ.num,text:t,img:pendingExplImg||null,created:Date.now()});}
+  else{const k=getQKey(q);userExpl.push({id:Date.now(),qKey:k,section:q.section,qNum:q.num,text:t,img:pendingExplImg||null,created:Date.now()});}
   editingExplId=null;pendingExplImg=null;explEditOpen=false;
-  syncToCloud();renderQuiz();
+  syncToCloud();_explRerender();
 }
-function deleteUserExpl(id){if(!confirm('내가 추가한 이 해설을 삭제할까요?'))return;userExpl=userExpl.filter(n=>n.id!==id);if(editingExplId===id){editingExplId=null;explEditOpen=false;}pendingExplImg=null;syncToCloud();if(currentQ)renderQuiz();}
+function deleteUserExpl(id){if(!confirm('내가 추가한 이 해설을 삭제할까요?'))return;userExpl=userExpl.filter(n=>n.id!==id);if(editingExplId===id){editingExplId=null;explEditOpen=false;}pendingExplImg=null;syncToCloud();_explRerender();}
 function handleExplPaste(e){
   const items=(e.clipboardData&&e.clipboardData.items)||[];
   for(let i=0;i<items.length;i++){
@@ -3411,7 +3425,7 @@ function renderExam(){
   h+='<div class="exam-omr">';
   examQuestions.forEach((qq,i)=>{h+='<button class="omr-cell'+(examAnswers[i]?' answered':'')+(i===examIdx?' current':'')+'" onclick="examGoto('+i+')">'+(i+1)+'</button>';});
   h+='</div>';
-  h+='<div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">'+(examIdx+1)+'번째 · 원본 Q'+q.num+'</div></div>';
+  h+='<div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">'+(examIdx+1)+'번째 · 원본 Q'+q.num+'</div>'+repeatBtnHtml(getQKey(q))+'</div>';
   h+='<div class="quiz-question">'+escapeHtml(q.question);
   if(q.question_images&&q.question_images.length)q.question_images.forEach(img=>{h+='<br><img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});
   h+='</div><div class="quiz-choices">';
@@ -3439,6 +3453,7 @@ function submitExam(auto){
   renderExamResult(res);document.getElementById('contentArea').scrollTop=0;
 }
 function renderExamResult(res){
+  explHostQ=null;explRerenderFn=null;explEditOpen=false;editingExplId=null;pendingExplImg=null;
   const c=document.getElementById('examContainer');const pct=res.total?Math.round(res.correct/res.total*100):0;
   const items=_examItems(res);
   const grade=pct>=80?'🏆 우수':pct>=60?'👍 양호':pct>=40?'💪 분발':'🌱 기초부터';
@@ -3480,8 +3495,9 @@ function _findReviewQ(it){
   if(sec&&num!=null){q=QUESTIONS.find(x=>x.section===sec&&String(x.num)===String(num));if(q)return q;}
   return null;
 }
-function startExamReview(id,idx){const res=examHistory.find(r=>r.id===id);if(!res)return;_examShow();document.getElementById('headerTitle').textContent='📖 모의고사 다시보기';try{renderExamReview(res,idx||0);}catch(e){console.error('[examReview] 렌더 실패:',e);openExamResult(id);return;}document.getElementById('contentArea').scrollTop=0;}
+function startExamReview(id,idx){const res=examHistory.find(r=>r.id===id);if(!res)return;explEditOpen=false;editingExplId=null;pendingExplImg=null;_examShow();document.getElementById('headerTitle').textContent='📖 모의고사 다시보기';try{renderExamReview(res,idx||0);}catch(e){console.error('[examReview] 렌더 실패:',e);openExamResult(id);return;}document.getElementById('contentArea').scrollTop=0;}
 function renderExamReview(res,idx){
+  explHostQ=null;explRerenderFn=null;
   const items=_examItems(res);const total=items.length;const c=document.getElementById('examContainer');
   if(!total){c.innerHTML='<div class="exam-wrap"><div class="exam-topbar"><button class="et-submit" style="background:#fff;color:var(--text2);border:1px solid var(--border2)" onclick="openExamResult('+res.id+')">← 결과</button></div><div class="empty-state"><div class="es-icon">🗂️</div><p>이 기록에는 다시 볼 문제 데이터가 없습니다.<br><span style="font-size:12px;color:var(--text3)">(예전 방식으로 저장되어 푼 문제 목록이 없는 기록이에요)</span></p></div></div>';return;}
   if(idx<0)idx=0;if(idx>=total)idx=total-1;
@@ -3493,25 +3509,21 @@ function renderExamReview(res,idx){
   h+='</div>';
   if(!q){const pp=_parseQKey(it.qKey);const sec=(it.section!=null?it.section:pp.section)||'';const num=(it.num!=null?it.num:pp.num);h+='<div class="empty-state"><div class="es-icon">❓</div><p>'+(sec?escapeHtml(sec)+' ':'')+(num!=null&&num!==''?'Q'+escapeHtml(String(num)):'이 문제')+' 데이터를 찾을 수 없습니다.<br><span style="font-size:12px;color:var(--text3)">문제가 새로 정리되어 번호가 바뀌었을 수 있어요 · 내 답: '+(it.sel?it.sel+'번':'미응답')+'</span></p></div>';h+='<div class="quiz-nav"><button onclick="startExamReview('+res.id+','+(idx-1)+')"'+(idx===0?' disabled style="opacity:.4"':'')+'>← 이전</button>';h+=(idx<total-1)?'<button class="primary" onclick="startExamReview('+res.id+','+(idx+1)+')">다음 →</button>':'<button class="primary" onclick="openExamResult('+res.id+')">결과로 →</button>';h+='</div></div>';c.innerHTML=h;return;}
   const ans=parseInt(q.answer,10);const ok=it.sel===ans;
-  h+='<div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">원본 Q'+q.num+'</div>';
-  h+='<span style="margin-left:auto;padding:3px 11px;border-radius:12px;font-size:11.5px;font-weight:800;'+(it.sel?(ok?'background:var(--correct-bg);color:var(--correct)':'background:var(--wrong-bg);color:var(--wrong)'):'background:var(--mint2);color:var(--text2)')+'">'+(it.sel?(ok?'✅ 정답':'❌ 오답'):'⬜ 미응답')+'</span></div>';
+  h+='<div class="quiz-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><div class="meta-section">'+escapeHtml(q.section)+'</div><div class="meta-num">원본 Q'+q.num+'</div>'+repeatBtnHtml(getQKey(q));
+  h+='<span style="margin-left:4px;padding:3px 11px;border-radius:12px;font-size:11.5px;font-weight:800;'+(it.sel?(ok?'background:var(--correct-bg);color:var(--correct)':'background:var(--wrong-bg);color:var(--wrong)'):'background:var(--mint2);color:var(--text2)')+'">'+(it.sel?(ok?'✅ 정답':'❌ 오답'):'⬜ 미응답')+'</span></div>';
   h+='<div class="quiz-question">'+escapeHtml(q.question);
   if(q.question_images&&q.question_images.length)q.question_images.forEach(img=>{h+='<br><img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});
   h+='</div><div class="quiz-choices">';
   (q.choices||[]).forEach((ch,i)=>{const n=i+1;let cls='choice-btn disabled';if(n===ans)cls+=' correct';else if(n===it.sel)cls+=' wrong';else cls+=' dimmed';h+='<button class="'+cls+'"><span class="choice-num">'+n+'</span><span class="choice-text">'+escapeHtml(ch)+'</span></button>';});
   h+='</div>';
   h+='<div style="font-size:12.5px;color:var(--text2);font-weight:700;margin:2px 0 12px">내 답: '+(it.sel?it.sel+'번':'미응답')+' · 정답: '+ans+'번</div>';
-  if(q.explanation||q.reference||(q.explanation_images&&q.explanation_images.length)){
-    h+='<div class="explanation-box"><h3>📖 해설</h3>';
-    if(q.explanation)h+='<div class="expl-text">'+escapeHtml(q.explanation)+'</div>';
-    if(q.reference)h+='<div class="expl-ref">📚 '+escapeHtml(q.reference)+'</div>';
-    if(q.explanation_images&&q.explanation_images.length){h+='<div class="expl-images">';q.explanation_images.forEach(img=>{h+='<img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});h+='</div>';}
-    h+='</div>';
-  }else{h+='<div class="explanation-box" style="color:var(--text2);font-size:13px">등록된 해설이 없습니다.</div>';}
+  /* 원본 해설 + 내 해설 추가/수정 (퀴즈와 동일한 편집기를 이 화면에서도 쓰도록 컨텍스트 지정) */
+  explHostQ=q;explRerenderFn=function(){renderExamReview(res,idx);};
+  h+=explanationBoxHtml(q);
   h+='<div class="quiz-nav"><button onclick="startExamReview('+res.id+','+(idx-1)+')"'+(idx===0?' disabled style="opacity:.4"':'')+'>← 이전</button>';
   h+=(idx<total-1)?'<button class="primary" onclick="startExamReview('+res.id+','+(idx+1)+')">다음 →</button>':'<button class="primary" onclick="openExamResult('+res.id+')">결과로 →</button>';
   h+='</div></div>';
-  c.innerHTML=h;
+  c.innerHTML=h;renderPendingExplImg();
 }
 
 /* ---------- 메모 이미지 붙여넣기 ---------- */
