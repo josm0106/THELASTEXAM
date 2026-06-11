@@ -8,9 +8,10 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>전문의 시험 공부</title>
-<link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
-<link rel="icon" type="image/png" sizes="256x256" href="images/logo.png?v=2">
-<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=2">
+<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico?v=3">
+<link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=3">
+<link rel="icon" type="image/png" sizes="256x256" href="images/logo.png?v=3">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=3">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -859,7 +860,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 <body>
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
-    <div class="login-logo"><img src="images/logo.png?v=2" alt="로고"></div>
+    <div class="login-logo"><img src="images/logo.png?v=3" alt="로고"></div>
     <h2>전문의 시험 공부</h2>
     <div class="login-sub">로그인하면 풀이·오답·메모가<br>모든 기기(PC·핸드폰)에서 동기화됩니다</div>
     <label>아이디</label><input type="text" id="loginId" placeholder="아이디 입력" autocomplete="username">
@@ -876,7 +877,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-header"><h1><img class="site-mark" src="images/logo.png?v=2" alt="로고">전문의 시험 공부</h1><div class="sub">기출·복원 문제 풀이 + 오답·메모</div></div>
+  <div class="sidebar-header"><h1><img class="site-mark" src="images/logo.png?v=3" alt="로고">전문의 시험 공부</h1><div class="sub">기출·복원 문제 풀이 + 오답·메모</div></div>
   <div class="user-bar" id="userBar" style="display:none"><div class="user-info"><span class="user-icon">J</span><span id="userDisplayName">로그인 중</span></div><button class="logout-btn" id="logoutBtn" onclick="doLogout()">로그아웃</button></div>
   <div class="sidebar-nav">
     <button class="nav-btn active" id="navHome" onclick="goHome()"><span class="nav-ico">🏠</span>홈 · 대시보드</button>
@@ -928,7 +929,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260611-1751';
+const APP_VERSION='20260611-1757';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
