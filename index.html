@@ -256,12 +256,47 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .login-box .login-error{color:var(--wrong);font-size:12px;text-align:center;margin-top:12px;min-height:18px;font-weight:600}
 .login-box .login-hint{color:var(--text3);font-size:11px;text-align:center;margin-top:14px;line-height:1.6}
 
-.sync-indicator{position:fixed;top:52px;right:12px;z-index:9999;padding:5px 12px;border-radius:9px;font-size:11px;font-weight:700;display:none;box-shadow:var(--shadow);align-items:center}
+.sync-indicator{position:fixed;top:52px;right:12px;z-index:10000;padding:5px 12px;border-radius:9px;font-size:11px;font-weight:700;display:none;box-shadow:var(--shadow);align-items:center}/* 타이머 위젯(9999)보다 위 — 종료·저장실패 토스트 가림 방지 */
 /* 💾 항상 보이는 우측 상단 저장&동기화 버튼 (사이드바 하단 버튼이 모바일 브라우저 툴바에 가려지는 문제 회피) */
 .sync-fab{position:fixed;top:10px;right:10px;z-index:9998;width:27px;height:27px;padding:0;border-radius:50%;border:none;background:linear-gradient(135deg,var(--lime,#b8f24a),var(--lime2,#a3e63a));color:var(--ink,#0e1813);font-size:13px;cursor:pointer;box-shadow:0 3px 10px rgba(184,242,74,.3);display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1}
 .sync-fab:hover{filter:brightness(1.05)}
 .sync-fab:active{transform:scale(.96)}
 .sync-fab:disabled{opacity:.6;cursor:default}
+/* ⏱️ 공부 타이머 — 우측 상단 시계 버튼 + 드래그 가능한 플로팅 위젯 */
+.timer-fab{position:fixed;top:10px;right:45px;z-index:9998;width:27px;height:27px;padding:0;border-radius:50%;border:1px solid var(--shell-bd2,rgba(255,255,255,.17));background:var(--shell-bg2,#13241b);color:var(--lime,#b8f24a);font-size:13px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;font-weight:800}
+.timer-fab:hover{filter:brightness(1.25)}
+.timer-fab:active{transform:scale(.96)}
+.timer-fab.running{border-color:var(--lime,#b8f24a);box-shadow:0 0 0 2px rgba(184,242,74,.25),0 3px 10px rgba(0,0,0,.25);font-size:9.5px}
+.timer-widget{position:fixed;top:46px;right:10px;z-index:9999;width:216px;background:linear-gradient(160deg,#13241b,#0e1813);border:1px solid var(--shell-bd2,rgba(255,255,255,.17));border-radius:15px;box-shadow:0 18px 44px rgba(0,0,0,.45);padding:10px 13px 13px;display:none;user-select:none;color:var(--shell-tx,#e9f1ec)}
+.timer-widget.open{display:block}
+.timer-head{display:flex;align-items:center;gap:6px;cursor:grab;padding-bottom:7px;border-bottom:1px solid var(--shell-bd,rgba(255,255,255,.09));margin-bottom:8px;font-size:12px;font-weight:800;touch-action:none}
+.timer-head:active{cursor:grabbing}
+.timer-head .th-hint{font-weight:500;color:var(--shell-tx3,#6b8076);font-size:9.5px}
+.timer-close{margin-left:auto;background:none;border:none;color:var(--shell-tx2,#96aa9e);font-size:16px;cursor:pointer;line-height:1;padding:2px 5px;border-radius:6px;font-family:inherit}
+.timer-close:hover{color:#fff;background:rgba(255,255,255,.08)}
+.timer-display{font-size:34px;font-weight:800;text-align:center;letter-spacing:1px;font-variant-numeric:tabular-nums;color:var(--lime,#b8f24a);text-shadow:0 0 18px rgba(184,242,74,.25);margin:2px 0 6px}
+.timer-widget.done .timer-display{color:#ff8d80;text-shadow:0 0 18px rgba(255,120,100,.35);animation:tBlink 1s steps(2,start) infinite}
+@keyframes tBlink{50%{opacity:.25}}
+.timer-bar{height:4px;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden;margin-bottom:9px}
+.timer-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime,#b8f24a),#7fbe1f);border-radius:3px;transition:width .25s linear}
+.timer-presets{display:flex;gap:6px;margin-bottom:8px}
+.timer-presets button{flex:1;padding:7px 0;border:1px solid var(--shell-bd2,rgba(255,255,255,.17));border-radius:9px;background:rgba(255,255,255,.05);color:var(--shell-tx,#e9f1ec);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s}
+.timer-presets button:hover{border-color:var(--lime,#b8f24a);color:var(--lime,#b8f24a)}
+.timer-custom{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--shell-tx2,#96aa9e);font-weight:700}
+.timer-custom .tc-btn{width:26px;height:26px;border:1px solid var(--shell-bd2,rgba(255,255,255,.17));border-radius:8px;background:rgba(255,255,255,.05);color:var(--shell-tx,#e9f1ec);font-size:14px;cursor:pointer;font-family:inherit;line-height:1}
+.timer-custom .tc-btn:hover{border-color:var(--lime,#b8f24a);color:var(--lime,#b8f24a)}
+.timer-custom input{width:48px;padding:5px 2px;text-align:center;border:1px solid var(--shell-bd2,rgba(255,255,255,.17));border-radius:8px;background:rgba(255,255,255,.06);color:#fff;font-size:13px;font-weight:800;font-family:inherit;outline:none;-moz-appearance:textfield}
+.timer-custom input::-webkit-outer-spin-button,.timer-custom input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.timer-custom input:focus{border-color:var(--lime,#b8f24a)}
+.timer-custom .tc-set{margin-left:auto;padding:6px 11px;border:none;border-radius:9px;background:rgba(184,242,74,.16);color:var(--lime,#b8f24a);font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.timer-custom .tc-set:hover{background:rgba(184,242,74,.28)}
+.timer-actions{display:flex;gap:6px;margin-top:9px}
+.timer-actions button{flex:1;padding:8px 0;border:none;border-radius:10px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;transition:filter .15s}
+.timer-actions .ta-start{background:linear-gradient(135deg,var(--lime,#b8f24a),var(--lime2,#a3e63a));color:var(--ink,#0e1813)}
+.timer-actions .ta-start:hover{filter:brightness(1.07)}
+.timer-actions .ta-reset{background:rgba(255,255,255,.07);color:var(--shell-tx2,#96aa9e);border:1px solid var(--shell-bd,rgba(255,255,255,.09))}
+.timer-actions .ta-reset:hover{color:#fff}
+@media(max-width:768px){.timer-fab{top:9px;right:48px}}
 .sync-indicator.syncing{display:flex;background:var(--accent);color:#fff}
 .sync-indicator.synced{display:flex;background:var(--correct);color:#fff}
 .sync-indicator.error{display:flex;background:var(--wrong);color:#fff}
@@ -872,6 +907,26 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 </div>
 <div class="sync-indicator" id="syncIndicator"></div>
 <button class="sync-fab" id="syncFab" onclick="manualSync()" title="저장 & 동기화">💾</button>
+<button class="timer-fab" id="timerFab" onclick="toggleTimerWidget()" title="공부 타이머">🕒</button>
+<div class="timer-widget" id="timerWidget">
+  <div class="timer-head" id="timerHead">⏱ 타이머 <span class="th-hint">잡고 끌면 이동</span><button class="timer-close" onclick="toggleTimerWidget()" title="닫기">×</button></div>
+  <div class="timer-display" id="timerDisplay">15:00</div>
+  <div class="timer-bar"><i id="timerBarFill"></i></div>
+  <div class="timer-presets">
+    <button onclick="timerSet(15)">15분</button><button onclick="timerSet(30)">30분</button><button onclick="timerSet(45)">45분</button>
+  </div>
+  <div class="timer-custom">
+    <button class="tc-btn" onclick="timerAdjustMin(-1)">−</button>
+    <input type="number" id="timerMinInput" min="1" max="180" value="15" inputmode="numeric">
+    <button class="tc-btn" onclick="timerAdjustMin(1)">＋</button>
+    <span>분</span>
+    <button class="tc-set" onclick="timerStartCustom()">설정·시작</button>
+  </div>
+  <div class="timer-actions">
+    <button class="ta-start" id="timerStartBtn" onclick="timerStartPause()">▶ 시작</button>
+    <button class="ta-reset" onclick="timerResetBtn()">↺ 리셋</button>
+  </div>
+</div>
 <button class="mobile-memo-fab" onclick="toggleMemo()">📋</button>
 <button class="hamburger" onclick="toggleSidebar()">☰</button>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -929,7 +984,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260611-1757';
+const APP_VERSION='20260611-2119';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -1007,6 +1062,10 @@ function loadLocalData(){
   dailyGoal=parseInt(localStorage.getItem(PREFIX+'_dailygoal')||'20',10)||20;
   userExpl=JSON.parse(localStorage.getItem(PREFIX+'_uexpl')||'[]');
   examUsed=JSON.parse(localStorage.getItem(PREFIX+'_examused')||'{}');
+  answerDeleted=JSON.parse(localStorage.getItem(PREFIX+'_adel')||'{}');
+  wrongViews=JSON.parse(localStorage.getItem(PREFIX+'_wviews')||'{}');
+  answerResetAll=parseInt(localStorage.getItem(PREFIX+'_aresetall')||'0',10)||0;
+  wrongResetAll=parseInt(localStorage.getItem(PREFIX+'_wresetall')||'0',10)||0;
 }
 function doLogout(){if(!confirm('로그아웃 하시겠습니까?'))return;auth.signOut();location.reload();}
 auth.onAuthStateChanged(u=>{
@@ -1026,7 +1085,27 @@ auth.onAuthStateChanged(u=>{
   }
 });
 function _mergeArrById(a,b){const seen=new Set();const out=[];for(const it of [...(a||[]),...(b||[])]){if(!it||it.id==null)continue;if(seen.has(it.id))continue;seen.add(it.id);out.push(it);}return out;}
-function _mergeObjByKey(a,b,timeKey){const out={...(a||{})};for(const k of Object.keys(b||{})){if(!out[k]){out[k]=b[k];}else{const t1=(out[k]&&out[k][timeKey])||0,t2=(b[k]&&b[k][timeKey])||0;if(t2>t1)out[k]={...b[k]};if(timeKey==='lastViewed'&&out[k].count!=null&&b[k].count!=null)out[k].count=Math.max(out[k].count,b[k].count);}}return out;}
+function _mergeObjByKey(a,b,timeKey){const out={...(a||{})};for(const k of Object.keys(b||{})){if(!out[k]){out[k]=b[k];}else{const t1=(out[k]&&out[k][timeKey])||0,t2=(b[k]&&b[k][timeKey])||0;if(t2>t1)out[k]={...b[k]};if(timeKey==='lastViewed'&&out[k].count!=null&&b[k].count!=null){const mc=Math.max(out[k].count,b[k].count);if(mc!==out[k].count)out[k]={...out[k],count:mc};/* 클라우드 원본 제자리 변경 금지(머지 후 비교 기준 보존) */}}}return out;}
+/* 🪦 다시풀기/오답삭제 묘비 — union 머지가 클라우드·다른 기기의 옛 답을 부활시키지 않도록 '무엇을 언제 지웠는지'를 동기화.
+   단건 묘비 = {t:삭제시각, a:지운 답의 timestamp} → '답.timestamp <= 묘비.a'인 답만 정밀 삭제(기기 간 시계 오차에 면역).
+   전체 초기화 = 전역 시각 answerResetAll(모든 답)·wrongResetAll(오답만) → 그 시각 이전 답 삭제(로컬에 없던 다른 기기 키 포함), 이후 새로 푼 답은 보존.
+   묘비보다 새 답을 만나면 답을 살리고 묘비를 폐기. 묘비·시각은 max-머지(단조 증가)라 어느 기기서든 안전하게 합쳐짐. */
+function _delT(v){return typeof v==='number'?v:((v&&v.t)||0);}
+function _delA(v){return typeof v==='number'?v:((v&&v.a)||0);}
+function _mergeDelMap(a,b){const out={...(a||{})};for(const k of Object.keys(b||{})){if(_delT(b[k])>_delT(out[k]))out[k]=b[k];}return out;}
+function _applyAnswerTombstones(){
+  for(const k of Object.keys(answerData)){
+    const a=answerData[k];const ts=(a&&a.timestamp)||0;
+    if(ts<answerResetAll){delete answerData[k];continue;}
+    if(a&&!a.correct&&ts<wrongResetAll){delete answerData[k];continue;}
+    const d=answerDeleted[k];if(d==null)continue;
+    const dead=(typeof d==='number')?(ts<d):(ts<=_delA(d));
+    if(dead)delete answerData[k];else delete answerDeleted[k];/* 묘비 이후 새로 푼 답 → 답 보존, 묘비 폐기 */
+  }
+}
+function _hasNewerDel(cloud,merged){const c=cloud||{};for(const k of Object.keys(merged||{})){if(_delT(merged[k])>_delT(c[k]))return true;}return false;}
+/* count(조회수)는 lastViewed가 오래돼도 머지로 커질 수 있어 시각 비교만으론 전파 누락 → 별도 판정 */
+function _hasNewerCount(cloud,merged){const c=cloud||{};for(const k of Object.keys(merged||{})){if((((merged[k]||{}).count)||0)>((((c[k]||{}).count)||0)))return true;}return false;}
 /* 같은 키를 양쪽 기기서 답했을 때(개수는 동일) 로컬에 '더 최신' 값이 있으면 true → 클라우드로 다시 올려 전파.
    업로드 후엔 클라우드가 같아져 다음 로드때 false가 되므로 무한 업로드 루프 없음 */
 function _hasNewerLocal(cloud,local,timeKey){const c=cloud||{},l=local||{};for(const k of Object.keys(l)){if(c[k]===undefined)continue;if((((l[k]||{})[timeKey])||0)>(((c[k]||{})[timeKey])||0))return true;}return false;}
@@ -1088,7 +1167,8 @@ async function _fetchBlobs(){
 function _dataSig(){
   const oc=o=>Object.keys(o||{}).length;
   const mx=(o,k)=>{let m=0;for(const x in (o||{})){const t=(o[x]&&o[x][k])||0;if(t>m)m=t;}return m;};
-  return [oc(answerData),mx(answerData,'timestamp'),oc(viewData),mx(viewData,'lastViewed'),oc(repeatMarks),mx(repeatMarks,'ts'),(wrongNotes||[]).length,(memoNotes||[]).length,(mnemonics||[]).length,(examHistory||[]).length,(userExpl||[]).length,oc(examUsed),oc(studyLog),dailyGoal].join('|');
+  const mxn=o=>{let m=0;for(const x in (o||{})){const t=_delT(o[x]);if(t>m)m=t;}return m;};
+  return [oc(answerData),mx(answerData,'timestamp'),oc(viewData),mx(viewData,'lastViewed'),oc(repeatMarks),mx(repeatMarks,'ts'),(wrongNotes||[]).length,(memoNotes||[]).length,(mnemonics||[]).length,(examHistory||[]).length,(userExpl||[]).length,oc(examUsed),oc(studyLog),dailyGoal,oc(answerDeleted),mxn(answerDeleted),oc(wrongViews),mx(wrongViews,'lastViewed'),answerResetAll,wrongResetAll].join('|');
 }
 /* quiet=true(주기적 자동 당김)이면 변화가 있을 때만 화면 갱신/표시 → 평소엔 조용함. 변경여부(boolean) 반환 */
 async function loadFromFirestore(quiet){
@@ -1102,14 +1182,20 @@ async function loadFromFirestore(quiet){
       if(data.jm_resetToken===RESET_TOKEN){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}}
       const cw=data.jm_wrongNotes||[],cm=data.jm_memoNotes||[],cv=data.jm_viewData||{},ca=data.jm_answerData||{},cr=data.jm_repeatMarks||{};
       const cmn=data.jm_mnemonics||[],csl=data.jm_studyLog||{},ceh=data.jm_examHistory||[],cdg=data.jm_dailyGoal,cue=data.jm_userExpl||[],ceu=data.jm_examUsed||{};
+      const cad=data.jm_answerDeleted||{},cwv=data.jm_wrongViews||{},car=data.jm_answerResetAll||0,cwr=data.jm_wrongResetAll||0;
       const mw=_mergeArrById(cw,wrongNotes),mm=_mergeItemsKeepImg(cm,memoNotes),mv=_mergeObjByKey(cv,viewData,'lastViewed'),ma=_mergeObjByKey(ca,answerData,'timestamp'),mr=_mergeObjByKey(cr,repeatMarks,'ts');
       const mmn=_mergeArrById(cmn,mnemonics),msl=_mergeStudyLog(csl,studyLog),meh=_mergeArrById(ceh,examHistory),mue=_mergeItemsKeepImg(cue,userExpl);
+      const mad=_mergeDelMap(cad,answerDeleted),mwv=_mergeObjByKey(cwv,wrongViews,'lastViewed');
+      const mar=Math.max(car,answerResetAll||0),mwr=Math.max(cwr,wrongResetAll||0);
       const meu={...ceu,...examUsed};/* 출제이력 합집합(키=qKey) */
       const mdg=(typeof cdg==='number'&&cdg>0)?cdg:dailyGoal;
       const upload=mw.length>cw.length||mm.length>cm.length||Object.keys(mv).length>Object.keys(cv).length||Object.keys(ma).length>Object.keys(ca).length||Object.keys(mr).length>Object.keys(cr).length||mmn.length>cmn.length||meh.length>ceh.length||Object.keys(msl).length>Object.keys(csl).length||mue.length>cue.length||Object.keys(meu).length>Object.keys(ceu).length
         /* 개수는 같지만 로컬이 더 최신인 경우(같은 문제 재답/수정)도 전파 */
-        ||_hasNewerLocal(ca,answerData,'timestamp')||_hasNewerLocal(cv,viewData,'lastViewed')||_hasNewerLocal(cr,repeatMarks,'ts')||_studyLogNewer(csl,msl);
-      wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;
+        ||_hasNewerLocal(ca,answerData,'timestamp')||_hasNewerLocal(cv,viewData,'lastViewed')||_hasNewerLocal(cr,repeatMarks,'ts')||_studyLogNewer(csl,msl)
+        /* 다시풀기 묘비·전체초기화 시각·조회수(count는 시각과 별개로 커질 수 있음)가 로컬에서 더 최신이면 전파 */
+        ||_hasNewerDel(cad,mad)||mar>car||mwr>cwr||Object.keys(mwv).length>Object.keys(cwv).length||_hasNewerLocal(cwv,wrongViews,'lastViewed')||_hasNewerCount(cwv,mwv)||_hasNewerCount(cv,mv);
+      wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;answerDeleted=mad;wrongViews=mwv;answerResetAll=mar;wrongResetAll=mwr;
+      _applyAnswerTombstones();/* 머지로 부활한 '다시풀기/초기화' 답 제거 */
       _saveLocal();/* 머지 결과는 항상 로컬에 영속화 — 순수 pull(다른 기기 기록만 받은 경우)도 저장돼 새로고침 후에도 유지 */
       await _fetchBlobs();/* 다른 기기가 올린 이미지(_img 플래그) 가져와 붙임 */_saveLocal();
       changed=_dataSig()!==sigBefore;/* 실제로 바뀐 게 있는지 */
@@ -1144,6 +1230,10 @@ function _saveLocal(){
     full=!_lsSet(PREFIX+'_examhist',JSON.stringify(examHistory))||full;
     full=!_lsSet(PREFIX+'_dailygoal',String(dailyGoal))||full;
     full=!_lsSet(PREFIX+'_examused',JSON.stringify(examUsed))||full;
+    full=!_lsSet(PREFIX+'_adel',JSON.stringify(answerDeleted))||full;
+    full=!_lsSet(PREFIX+'_wviews',JSON.stringify(wrongViews))||full;
+    full=!_lsSet(PREFIX+'_aresetall',String(answerResetAll))||full;
+    full=!_lsSet(PREFIX+'_wresetall',String(wrongResetAll))||full;
     [['_memos','m',memoNotes],['_uexpl','e',userExpl]].forEach(([k,t,arr])=>{
       if(_lsSet(PREFIX+k,JSON.stringify(arr||[])))return;
       const lighter=(arr||[]).map(it=>{if(it&&it.img&&_uploadedBlobs.has(_blobId(t,it.id))){const o={...it};delete o.img;o._img=1;return o;}return it;});
@@ -1166,6 +1256,7 @@ async function saveToFirestore(retryCount){
     const ref=db.collection('users').doc(currentUser.uid);
     /* 🛡️ 클로버(덮어쓰기) 방지: set({...},{merge:true})는 jm_ 필드를 '통째로' 교체하므로,
        쓰기 직전 클라우드 현재값을 읽어 union 머지한 뒤 써야 다른 기기의 더 최신 기록을 절대 안 지운다. */
+    let preOk=false;/* 사전읽기 성공 여부 — 실패 시 단조 맵(묘비·조회수·초기화시각)은 이번 set에서 제외(구값 leaf 덮어쓰기/빈맵 교체로 클라우드 후퇴 방지) */
     try{
       const cd=await ref.get();
       if(cd.exists){const c=cd.data()||{};
@@ -1175,7 +1266,12 @@ async function saveToFirestore(retryCount){
         examHistory=_mergeArrById(c.jm_examHistory,examHistory);
         userExpl=_mergeItemsKeepImg(c.jm_userExpl,userExpl);
         viewData=_mergeObjByKey(c.jm_viewData,viewData,'lastViewed');
+        answerDeleted=_mergeDelMap(c.jm_answerDeleted,answerDeleted);
+        wrongViews=_mergeObjByKey(c.jm_wrongViews,wrongViews,'lastViewed');
+        answerResetAll=Math.max(c.jm_answerResetAll||0,answerResetAll||0);
+        wrongResetAll=Math.max(c.jm_wrongResetAll||0,wrongResetAll||0);
         answerData=_mergeObjByKey(c.jm_answerData,answerData,'timestamp');
+        _applyAnswerTombstones();/* 머지로 부활한 '다시풀기/초기화' 답 제거 */
         repeatMarks=_mergeObjByKey(c.jm_repeatMarks,repeatMarks,'ts');
         studyLog=_mergeStudyLog(c.jm_studyLog,studyLog);
         examUsed={...(c.jm_examUsed||{}),...examUsed};
@@ -1183,11 +1279,18 @@ async function saveToFirestore(retryCount){
         if(c.jm_resetToken===RESET_TOKEN){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}}
         _saveLocal();
       }
-    }catch(preErr){/* 오프라인 등 사전 읽기 실패 → 로컬 그대로 큐잉(다음 온라인때 정상화) */}
+      preOk=true;
+    }catch(preErr){pendingSync=true;/* 오프라인 등 사전 읽기 실패 → 로컬 그대로 큐잉, 단조 맵은 다음 머지 저장 때 전파 */}
     /* 🖼️ 이미지는 blob 서브컬렉션으로 따로 업로드 → 메인 문서엔 경량(_img 플래그)만 기록해 1MB 한도 회피 */
     const blobsOk=await _uploadBlobs();
     const rt=localStorage.getItem(PREFIX+'_resetToken');/* 토큰을 클라우드에도 기록해 다른 기기의 재초기화 방지 */
-    await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:_lightItems(memoNotes),jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:_lightItems(userExpl),jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_appVersion:APP_VERSION,jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:_lightItems(memoNotes),jm_viewData:viewData,jm_answerData:answerData,
+      /* 단조(增) 필드는 사전머지 성공 + 비어있지 않을 때만 — 빈 맵은 merge:true에서도 '빈 맵으로 교체'라 클라우드 묘비가 통째로 소거됨 */
+      ...(preOk&&Object.keys(answerDeleted).length?{jm_answerDeleted:answerDeleted}:{}),
+      ...(preOk&&Object.keys(wrongViews).length?{jm_wrongViews:wrongViews}:{}),
+      ...(preOk&&answerResetAll?{jm_answerResetAll:answerResetAll}:{}),
+      ...(preOk&&wrongResetAll?{jm_wrongResetAll:wrongResetAll}:{}),
+      jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:_lightItems(userExpl),jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_appVersion:APP_VERSION,jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     setLastSync(Date.now());ok=true;
     if(!blobsOk)pendingSync=true;/* 사진 일부 업로드 실패 → 다음 저장 때 자동 재시도(장부에 없는 것만) */
   }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패'+(e&&e.code?' · '+e.code:''));pendingSync=true;
@@ -1208,7 +1311,7 @@ async function maybeResetAll(){
        토큰만 남겨(로컬+클라우드) 재초기화를 영구 차단. 새 기기/스토리지 비운 기기가 폰 기록을 지우는 사고를 막음 */
     const hasData=Object.keys(answerData).length||wrongNotes.length||memoNotes.length||mnemonics.length||userExpl.length||examHistory.length||Object.keys(repeatMarks).length||Object.keys(studyLog).length||Object.keys(viewData).length;
     if(hasData){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}if(currentUser){try{await saveToFirestore();}catch(e){}}return;}
-    wrongNotes=[];memoNotes=[];viewData={};answerData={};repeatMarks={};mnemonics=[];studyLog={};examHistory=[];userExpl=[];dailyGoal=20;examUsed={};
+    wrongNotes=[];memoNotes=[];viewData={};answerData={};repeatMarks={};mnemonics=[];studyLog={};examHistory=[];userExpl=[];dailyGoal=20;examUsed={};answerDeleted={};wrongViews={};answerResetAll=0;wrongResetAll=0;
     _saveLocal();
     if(currentUser){
       try{await saveToFirestore();localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);showSync('synced','🗑️ 전체 기록 초기화 완료');}
@@ -2530,7 +2633,7 @@ const SECTION_DEFS=[
 ]
 const SECTIONS=SECTION_DEFS.map(s=>({...s,questions:QUESTIONS.filter(q=>q.section===s.name)}));
 
-let currentQ=null,currentQIdx=-1,currentSectionIdx=-1,wrongNotes=[],memoNotes=[],viewData={},answerData={},repeatMarks={},currentMemoTab='wrong',currentMemoFilter='all',appInitialized=false;
+let currentQ=null,currentQIdx=-1,currentSectionIdx=-1,wrongNotes=[],memoNotes=[],viewData={},answerData={},repeatMarks={},answerDeleted={},wrongViews={},answerResetAll=0,wrongResetAll=0,currentMemoTab='wrong',currentMemoFilter='all',appInitialized=false;
 let viewMode='welcome',practiceSet=null,currentTopicGenre=null;
 /* ☕ 신규 기능 상태 */
 let mnemonics=[],studyLog={},examHistory=[],dailyGoal=20,pendingMemoImg=null,userExpl=[],pendingExplImg=null,explEditOpen=false,editingExplId=null;
@@ -2856,7 +2959,9 @@ function renderQuiz(){
 function selectAnswer(num){
   const q=currentQ,k=getQKey(q);if(answerData[k])return;
   const qAns=parseInt(q.answer,10);const ic=num===qAns;
-  answerData[k]={selected:num,correct:ic,timestamp:Date.now()};recordStudy(ic);syncToCloud();
+  /* 새 답의 timestamp는 로컬에 알려진 묘비·초기화 시각보다 항상 크게 — 기기 간 시계 오차로 방금 푼 답이 묘비에 잘려나가는 것 방지 */
+  const _ts=Math.max(Date.now(),_delA(answerDeleted[k])+1,_delT(answerDeleted[k])+1,(answerResetAll||0)+1,(!ic?(wrongResetAll||0)+1:0));
+  answerData[k]={selected:num,correct:ic,timestamp:_ts};delete answerDeleted[k];recordStudy(ic);syncToCloud();
   document.querySelectorAll('.choice-btn').forEach(b=>{const n=parseInt(b.getAttribute('data-choice'));b.classList.add('disabled');if(n===qAns)b.classList.add('correct');else if(n===num&&!ic)b.classList.add('wrong');else b.classList.add('dimmed');});
   document.getElementById('choicesArea').insertAdjacentHTML('afterend',renderResult(q,num));
   if(ic)launchConfetti();else if(practiceSet)practiceToast('📌 오답노트에 자동 저장됨');
@@ -2909,8 +3014,8 @@ function renderNoteSection(q){
 function decrementView(k){if(viewData[k]&&viewData[k].count>0){viewData[k].count--;if(viewData[k].count===0)delete viewData[k];syncToCloud();buildBookList();if(currentQ&&getQKey(currentQ)===k)renderQuiz();}}
 function resetView(k){delete viewData[k];syncToCloud();buildBookList();if(currentQ&&getQKey(currentQ)===k)renderQuiz();}
 function resetAllViews(){if(!confirm('전체 조회수를 초기화하시겠습니까?'))return;viewData={};syncToCloud();buildBookList();updateStats();}
-function resetOneAnswer(){if(!currentQ)return;const k=getQKey(currentQ);if(!answerData[k])return;delete answerData[k];syncToCloud();renderQuiz();buildBookList();updateStats();updateMemoCount();}
-function resetAllAnswers(){if(!confirm('모든 풀이 기록을 초기화하시겠습니까?'))return;answerData={};syncToCloud();buildBookList();updateStats();if(viewMode==='grid'&&currentSectionIdx>=0)renderGrid(currentSectionIdx);}
+function resetOneAnswer(){if(!currentQ)return;const k=getQKey(currentQ);if(!answerData[k])return;answerDeleted[k]={t:Date.now(),a:(answerData[k].timestamp||0)};/* 🪦 정밀 묘비: 이 답(timestamp 이하)만 삭제 — 클라우드 머지 부활 차단 */delete answerData[k];syncToCloud();renderQuiz();buildBookList();updateStats();updateMemoCount();if(document.getElementById('memoPanel').classList.contains('open')&&currentMemoTab==='wrong')renderMemoPanel();}
+function resetAllAnswers(){if(!confirm('모든 풀이 기록을 초기화하시겠습니까?'))return;answerResetAll=Date.now();/* 🪦 전역 초기화 시각 — 아직 안 받아온 다른 기기 키까지 적용 */answerData={};syncToCloud();buildBookList();updateStats();if(viewMode==='grid'&&currentSectionIdx>=0)renderGrid(currentSectionIdx);}
 function addMemoNote(){const q=_explCurQ();const i=document.getElementById('memoNoteInput'),t=i?i.value.trim():'';if((!t&&!pendingMemoImg)||!q)return;const k=getQKey(q);memoNotes.push({id:Date.now(),qKey:k,section:q.section,qNum:q.num,qText:(q.question||'').substring(0,50),text:t,img:pendingMemoImg||null,created:Date.now()});if(i)i.value='';pendingMemoImg=null;syncToCloud();_explRerender();updateMemoCount();renderMemoPanel();}
 function deleteNote(type,id){if(type==='wrong')wrongNotes=wrongNotes.filter(n=>n.id!==id);else memoNotes=memoNotes.filter(n=>n.id!==id);syncToCloud();_explRerender();buildBookList();updateStats();updateMemoCount();renderMemoPanel();}
 function _setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
@@ -2990,6 +3095,22 @@ function renderMemoPanel(){
   f.sort((a,b)=>b.created-a.created).forEach(n=>{h+='<div class="memo-item note" onclick="jumpToQ(\''+n.qKey+'\',\''+String(n.section).replace(/\x27/g,"\\\x27")+'\','+n.qNum+')" title="클릭 → 문제로 이동"><div class="memo-q">'+escapeHtml(n.section)+' Q'+n.qNum+' · '+escapeHtml(n.qText)+'...</div>'+(n.text?'<div class="memo-text">'+escapeHtml(n.text)+'</div>':'')+(n.img?'<img class="memo-img" src="'+n.img+'" onclick="event.stopPropagation();openLightbox(this.src)">':'')+'<button class="memo-del" onclick="event.stopPropagation();deleteNote(\'memo\','+n.id+')">×</button></div>';});
   l.innerHTML=h;
 }
+/* 👁🌈 오답노트 조회 횟수별 색상 — 1회 노랑 → 2회 초록 → 3회 파랑 → … (팔레트 초과 시 마지막 색 유지) */
+const WRONG_VIEW_COLORS=['#f1c40f','#27ae60','#2e86de','#8e44ad','#e91e8c','#e67e22','#16a085','#c0392b','#795548','#34495e','#9acd32','#00bcd4','#ff5722','#607d8b','#d4af37'];
+function wrongViewColor(n){return WRONG_VIEW_COLORS[Math.min(n,WRONG_VIEW_COLORS.length)-1];}
+/* 칩 글자색 = 흰색 vs 진초록 중 WCAG 대비가 큰 쪽 (0.0768 = #23320f의 상대휘도+0.05) */
+function _chipFg(hex){const f=c=>{c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);};const L=0.2126*f(parseInt(hex.slice(1,3),16))+0.7152*f(parseInt(hex.slice(3,5),16))+0.0722*f(parseInt(hex.slice(5,7),16));return (1.05/(L+0.05))>=((L+0.05)/0.0768)?'#fff':'#23320f';}
+function wrongViewChip(n){
+  if(n>0){const c=wrongViewColor(n);return '<span class="wv-chip" style="background:'+c+';color:'+_chipFg(c)+';padding:1px 7px;border-radius:8px;font-size:10px;font-weight:800;margin-left:4px;white-space:nowrap">👁 '+n+'회</span>';}
+  return '<span class="wv-chip" style="background:rgba(127,140,134,.22);color:var(--shell-tx2,#96aa9e);padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;margin-left:4px;white-space:nowrap">👁 0회</span>';
+}
+/* 오답노트 목록에서 클릭해 문제로 이동 — 조회수 +1 후 색·횟수 즉시 갱신 */
+function jumpToQWrong(qKey,fbSection,fbNum){
+  if(!wrongViews[qKey])wrongViews[qKey]={count:0,lastViewed:0};
+  wrongViews[qKey].count++;wrongViews[qKey].lastViewed=Date.now();syncToCloud();
+  renderWrongList();
+  jumpToQ(qKey,fbSection,fbNum);
+}
 function renderWrongList(){
   const wrongQs=QUESTIONS.filter(q=>{const a=answerData[getQKey(q)];return a&&!a.correct;});
   let f;
@@ -2999,10 +3120,14 @@ function renderWrongList(){
   const l=document.getElementById('wrongList');
   if(!f.length){l.innerHTML='<div class="memo-empty">오답이 없습니다 🎉</div>';document.getElementById('memoWrongPreview').style.display='none';return;}
   let h='';
-  f.forEach(q=>{const k=getQKey(q);const a=answerData[k];const txt=q.question.substring(0,60);const g=normChapter(q.chapter);const cb=g?'<span class="chap-badge">'+escapeHtml((CHAPTER_ICON[g]||'🧩')+' '+g)+'</span>':'';h+='<div class="memo-item wrong" data-qkey="'+k+'" onclick="jumpToQ(\''+k+'\',\''+String(q.section).replace(/\x27/g,"\\\x27")+'\','+q.num+')" title="클릭 → 문제로 이동"><div class="memo-q">'+cb+escapeHtml(q.section)+' Q'+q.num+'</div><div class="memo-text" style="font-size:12px;color:var(--text2);margin-top:2px">'+escapeHtml(txt)+'...</div><div style="font-size:11px;color:var(--wrong);margin-top:3px;font-weight:600">내 답: '+a.selected+'번 → 정답: '+q.answer+'번</div><button class="memo-del" title="이 오답 기록 삭제(재풀이 가능)" onclick="event.stopPropagation();deleteWrongOne(\''+k+'\')">×</button></div>';});
+  f.forEach(q=>{const k=getQKey(q);const a=answerData[k];const txt=q.question.substring(0,60);const g=normChapter(q.chapter);const cb=g?'<span class="chap-badge">'+escapeHtml((CHAPTER_ICON[g]||'🧩')+' '+g)+'</span>':'';
+    const n=(wrongViews[k]&&wrongViews[k].count)||0;
+    const bd=n>0?' style="border-left-color:'+wrongViewColor(n)+'"':'';
+    const kj=jsStr(k);
+    h+='<div class="memo-item wrong" data-qkey="'+escapeHtml(k)+'"'+bd+' onclick="jumpToQWrong(\''+kj+'\',\''+jsStr(q.section)+'\','+q.num+')" title="클릭 → 문제로 이동 (조회수 +1)"><div class="memo-q">'+cb+escapeHtml(q.section)+' Q'+q.num+wrongViewChip(n)+'</div><div class="memo-text" style="font-size:12px;color:var(--text2);margin-top:2px">'+escapeHtml(txt)+'...</div><div style="font-size:11px;color:var(--wrong);margin-top:3px;font-weight:600">내 답: '+a.selected+'번 → 정답: '+q.answer+'번</div><button class="memo-del" title="이 오답 기록 삭제(재풀이 가능)" onclick="event.stopPropagation();deleteWrongOne(\''+kj+'\')">×</button></div>';});
   l.innerHTML=h;
 }
-function deleteWrongOne(qKey){if(!confirm('이 문제의 오답 기록을 삭제할까요? (다시 풀 수 있습니다)'))return;delete answerData[qKey];syncToCloud();renderMemoPanel();updateMemoCount();updateStats();buildBookList();if(currentQ&&getQKey(currentQ)===qKey)renderQuiz();}
+function deleteWrongOne(qKey){if(!confirm('이 문제의 오답 기록을 삭제할까요? (다시 풀 수 있습니다)'))return;if(answerData[qKey])answerDeleted[qKey]={t:Date.now(),a:(answerData[qKey].timestamp||0)};delete answerData[qKey];syncToCloud();renderMemoPanel();updateMemoCount();updateStats();buildBookList();if(currentQ&&getQKey(currentQ)===qKey)renderQuiz();}
 function jumpToQ(qKey,fbSection,fbNum){
   let q=QUESTIONS.find(q=>getQKey(q)===qKey);
   if(!q&&fbSection!=null&&fbNum!=null){q=QUESTIONS.find(qq=>qq.section===fbSection&&String(qq.num)===String(fbNum));}
@@ -3022,10 +3147,107 @@ function exportNotes(){
   const b=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='전문의시험_노트.txt';a.click();
 }
 function clearCurrentTab(){
-  if(currentMemoTab==='wrong'){if(!confirm('모든 오답 기록을 초기화하시겠습니까?'))return;answerData={};syncToCloud();renderMemoPanel();updateMemoCount();updateStats();if(currentQ)renderQuiz();buildBookList();return;}
+  if(currentMemoTab==='wrong'){if(!confirm('모든 오답 기록을 초기화하시겠습니까? (정답 기록은 유지됩니다)'))return;wrongResetAll=Date.now();/* 🪦 오답 전용 전역 시각 — 정답은 어떤 기기에서도 안 지움 */Object.keys(answerData).forEach(k=>{if(!answerData[k].correct)delete answerData[k];});syncToCloud();renderMemoPanel();updateMemoCount();updateStats();if(currentQ)renderQuiz();buildBookList();return;}
   if(currentMemoTab==='repeat'){if(!confirm('모든 반복 표시를 해제하시겠습니까?'))return;repeatMarks={};syncToCloud();renderMemoPanel();updateRepeatCount();if(currentQ)renderQuiz();buildBookList();return;}
   if(!confirm('현재 탭의 모든 메모를 삭제하시겠습니까?'))return;memoNotes=[];syncToCloud();renderMemoPanel();updateMemoCount();if(currentQ)renderQuiz();
 }
+/* ===== ⏱️ 공부 타이머 — 우측 상단 🕒 버튼, 15/30/45분 프리셋 + 분 단위 조정, 위젯은 헤더를 잡고 드래그 이동(위치 기억) ===== */
+let timerTotalSec=0,timerLeftSec=0,timerEndTs=0,timerInt=null,timerRunning=false,timerDone=false,_timerAC=null;
+function _timerFmt(s){const m=Math.floor(s/60),x=s%60;return (m<10?'0':'')+m+':'+(x<10?'0':'')+x;}
+function toggleTimerWidget(){
+  const w=document.getElementById('timerWidget');const open=!w.classList.contains('open');
+  w.classList.toggle('open',open);
+  if(open){_timerRestorePos();if(timerLeftSec>0||timerRunning||timerDone)_timerUpdate();else{const i=document.getElementById('timerMinInput');document.getElementById('timerDisplay').textContent=_timerFmt((parseInt(i.value,10)||15)*60);}}
+  _timerFabRefresh();
+}
+function timerSet(min){/* 프리셋: 설정 후 즉시 시작 */
+  min=Math.max(1,Math.min(180,parseInt(min,10)||15));
+  const i=document.getElementById('timerMinInput');if(i)i.value=min;
+  timerTotalSec=min*60;timerLeftSec=timerTotalSec;timerDone=false;
+  _timerStart();
+}
+function timerStartCustom(){const i=document.getElementById('timerMinInput');timerSet(i?i.value:15);}
+function timerAdjustMin(d){
+  const i=document.getElementById('timerMinInput');if(!i)return;
+  const v=Math.max(1,Math.min(180,(parseInt(i.value,10)||15)+d));i.value=v;
+  if(!timerRunning&&timerLeftSec<=0){document.getElementById('timerDisplay').textContent=_timerFmt(v*60);}
+}
+function _timerStart(){
+  if(timerLeftSec<=0)return;
+  document.getElementById('timerWidget').classList.remove('done');
+  timerRunning=true;timerDone=false;timerEndTs=Date.now()+timerLeftSec*1000;
+  try{if(!_timerAC)_timerAC=new (window.AudioContext||window.webkitAudioContext)();if(_timerAC&&_timerAC.state==='suspended')_timerAC.resume();}catch(e){}/* 종료음은 시작 제스처에서 만든 컨텍스트로 재생(자동재생 차단 회피) */
+  clearInterval(timerInt);timerInt=setInterval(_timerTick,250);
+  _timerTick();
+}
+function timerStartPause(){
+  if(timerRunning){timerLeftSec=Math.max(0,Math.round((timerEndTs-Date.now())/1000));timerRunning=false;clearInterval(timerInt);timerInt=null;_timerUpdate();}
+  else{if(timerLeftSec<=0){timerStartCustom();return;}_timerStart();}
+}
+function timerResetBtn(){
+  clearInterval(timerInt);timerInt=null;timerRunning=false;timerDone=false;timerEndTs=0;timerLeftSec=0;timerTotalSec=0;
+  document.getElementById('timerWidget').classList.remove('done');
+  const i=document.getElementById('timerMinInput');
+  document.getElementById('timerDisplay').textContent=_timerFmt((parseInt(i.value,10)||15)*60);
+  document.getElementById('timerBarFill').style.width='0';
+  document.getElementById('timerStartBtn').textContent='▶ 시작';
+  _timerFabRefresh();
+}
+function _timerTick(){
+  timerLeftSec=Math.max(0,Math.round((timerEndTs-Date.now())/1000));
+  _timerUpdate();
+  if(timerLeftSec<=0)_timerEnd();
+}
+function _timerUpdate(){
+  document.getElementById('timerDisplay').textContent=_timerFmt(timerLeftSec);
+  if(timerTotalSec>0)document.getElementById('timerBarFill').style.width=Math.min(100,100*(timerTotalSec-timerLeftSec)/timerTotalSec)+'%';
+  document.getElementById('timerStartBtn').textContent=timerRunning?'⏸ 일시정지':'▶ 시작';
+  _timerFabRefresh();
+}
+function _timerFabRefresh(){
+  const fab=document.getElementById('timerFab');if(!fab)return;
+  if(timerRunning){fab.classList.add('running');fab.textContent=Math.ceil(timerLeftSec/60)+"'";fab.title='타이머 '+_timerFmt(timerLeftSec)+' 남음';}
+  else{fab.classList.remove('running');fab.textContent='🕒';fab.title='공부 타이머';}
+}
+function _timerEnd(){
+  clearInterval(timerInt);timerInt=null;timerRunning=false;timerDone=true;timerLeftSec=0;
+  const w=document.getElementById('timerWidget');w.classList.add('done');
+  if(!w.classList.contains('open'))toggleTimerWidget();/* 종료 시 위젯 자동 표시 */
+  _timerUpdate();
+  try{if(navigator.vibrate)navigator.vibrate([300,140,300,140,300]);}catch(e){}
+  _timerBeep();
+  try{showSync('synced','⏱ 타이머 종료!');}catch(e){}
+}
+function _timerBeep(){
+  try{
+    const ctx=_timerAC||new (window.AudioContext||window.webkitAudioContext)();
+    let t=ctx.currentTime;
+    for(let i=0;i<3;i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.3,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.start(t);o.stop(t+.4);t+=.5;}
+  }catch(e){}
+}
+/* 드래그 이동 — 헤더(⏱ 타이머 줄)를 잡고 끌기. 화면 밖으로 못 나가게 클램프, 위치는 localStorage에 기억 */
+function _timerMoveTo(l,t){
+  const w=document.getElementById('timerWidget');
+  const mw=Math.max(0,window.innerWidth-w.offsetWidth),mh=Math.max(0,window.innerHeight-w.offsetHeight);
+  w.style.left=Math.max(0,Math.min(mw,l))+'px';w.style.top=Math.max(0,Math.min(mh,t))+'px';w.style.right='auto';w.style.bottom='auto';
+}
+function _timerSavePos(){const r=document.getElementById('timerWidget').getBoundingClientRect();try{localStorage.setItem(PREFIX+'_timerpos',JSON.stringify({l:r.left,t:r.top}));}catch(e){}}
+function _timerRestorePos(){try{const p=JSON.parse(localStorage.getItem(PREFIX+'_timerpos')||'null');if(p&&typeof p.l==='number')_timerMoveTo(p.l,p.t);}catch(e){}}
+(function(){
+  const w=document.getElementById('timerWidget'),hd=document.getElementById('timerHead');
+  if(!w||!hd)return;
+  let drag=false,dx=0,dy=0;
+  hd.addEventListener('pointerdown',function(e){
+    if(e.target.closest('button'))return;
+    drag=true;const r=w.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;
+    try{hd.setPointerCapture(e.pointerId);}catch(_){}
+    e.preventDefault();
+  });
+  hd.addEventListener('pointermove',function(e){if(drag)_timerMoveTo(e.clientX-dx,e.clientY-dy);});
+  function _dEnd(){if(!drag)return;drag=false;_timerSavePos();}
+  hd.addEventListener('pointerup',_dEnd);hd.addEventListener('pointercancel',_dEnd);
+  window.addEventListener('resize',function(){if(w.classList.contains('open'))_timerRestorePos();});
+})();
 function initMemoResize(){
   const p=document.getElementById('memoPanel'),h=document.getElementById('memoResizeHandle');if(!h||!p)return;
   let sx,sw,r=false;
