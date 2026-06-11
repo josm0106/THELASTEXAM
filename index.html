@@ -923,7 +923,7 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260608-2029';
+const APP_VERSION='20260611-1333';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -956,7 +956,7 @@ const _tleApp=firebase.initializeApp(firebaseConfig,'thelastexam');const auth=_t
    멀티탭(failed-precondition)·iOS사파리 시크릿(unimplemented) 등에서 거부될 수 있으니 동기 throw와 비동기 reject 모두 무시 */
 try{db.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
 try{auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});}catch(e){}
-let currentUser=null,firestoreReady=false,syncDebounceTimer=null,pendingSync=false,syncInFlight=false,lastPullAt=0,lastSyncAt=0;
+let currentUser=null,firestoreReady=false,syncDebounceTimer=null,pendingSync=false,syncInFlight=false,lastPullAt=0,lastSyncAt=0,_lastPermChk=0;
 /* 이 앱 전용 네임스페이스 — 다른 앱(017)과 데이터가 섞이지 않도록 jm_ 접두사 사용 */
 const PREFIX='jeonmuni2026',EMAIL_DOMAIN='orthoboard.app';
 function showSync(s,m){const e=document.getElementById('syncIndicator');e.className='sync-indicator '+s;e.textContent=m||'';if(s==='synced')setTimeout(()=>{e.className='sync-indicator';},1500);}
@@ -1029,6 +1029,9 @@ function _studyLogNewer(cloud,merged){const c=cloud||{},m=merged||{};for(const k
    Firestore 문서 1개는 1MB 한도라, 이미지를 메인 문서에 넣으면 몇 장만 쌓여도 저장이 통째로 실패함.
    → 이미지는 users/{uid}/blobs/{id} 서브컬렉션에 '항목당 1문서'로 저장(각 ~300KB<1MB), 메인 문서엔 _img 플래그만. */
 const _uploadedBlobs=new Set();/* 이미 클라우드에 올라간 blob id (재업로드 방지). 로드 시 채워짐 */
+/* 업로드 장부를 localStorage에 영속화 — 새로고침 후에도 같은 사진을 매번 재업로드(저장마다 ~1.4MB 쓰기)하지 않게 함 */
+try{JSON.parse(localStorage.getItem(PREFIX+'_blobids')||'[]').forEach(b=>_uploadedBlobs.add(b));}catch(e){}
+function _persistBlobIds(){try{localStorage.setItem(PREFIX+'_blobids',JSON.stringify([..._uploadedBlobs]));}catch(e){}}
 function _blobId(type,id){return type+'_'+id;}
 /* id로 union 병합하되 로컬의 실제 이미지(img)는 보존. 클라우드 항목은 _img 플래그만 있고 img는 blob에서 따로 가져옴 */
 function _mergeItemsKeepImg(cloudArr,localArr){
@@ -1042,7 +1045,8 @@ function _mergeItemsKeepImg(cloudArr,localArr){
   return Object.values(out);
 }
 /* 메인 문서에 쓸 경량 버전 — img(base64) 제거하고 _img:1 플래그만 남김 */
-function _lightItems(arr){return (arr||[]).map(it=>{const o={...it};if(o.img){delete o.img;o._img=1;}else{delete o.img;delete o._img;}return o;});}
+/* 주의: img가 메모리에 없어도(아직 blob 미복원) 기존 _img 플래그는 보존해야 함 — 지우면 클라우드 메인 문서에서 '사진 있음' 정보가 소실되어 blob이 고아화(사진 유실)됨 */
+function _lightItems(arr){return (arr||[]).map(it=>{const o={...it};if(o.img){delete o.img;o._img=1;}else{delete o.img;if(!o._img)delete o._img;}return o;});}
 /* 로컬에 이미지가 있는 항목을 blob으로 업로드(아직 클라우드에 없는 것만). 전부 성공하면 true */
 async function _uploadBlobs(){
   if(!currentUser)return false;
@@ -1050,13 +1054,14 @@ async function _uploadBlobs(){
   const list=[];
   (userExpl||[]).forEach(e=>{if(e&&e.img)list.push([_blobId('e',e.id),e.img]);});
   (memoNotes||[]).forEach(m=>{if(m&&m.img)list.push([_blobId('m',m.id),m.img]);});
-  let ok=true;
+  let ok=true,added=0;
   for(const [bid,img] of list){
     if(_uploadedBlobs.has(bid))continue;
     if(typeof img!=='string'||img.length>1040000){console.warn('[blob] 이미지가 너무 커서 클라우드 저장 불가',bid,img&&img.length);ok=false;continue;}
-    try{await col.doc(bid).set({img});_uploadedBlobs.add(bid);}
+    try{await col.doc(bid).set({img});_uploadedBlobs.add(bid);added++;}
     catch(e){console.error('[blob] 업로드 실패',bid,e.code||e.message);ok=false;}
   }
+  if(added)_persistBlobIds();
   return ok;
 }
 /* _img 플래그가 있는데 메모리에 img가 없는 항목(다른 기기가 올린 것·새 기기)의 이미지를 blob에서 가져와 붙임 */
@@ -1066,10 +1071,12 @@ async function _fetchBlobs(){
   const need=[];
   (userExpl||[]).forEach(e=>{if(e&&e._img&&!e.img)need.push(['e',e]);});
   (memoNotes||[]).forEach(m=>{if(m&&m._img&&!m.img)need.push(['m',m]);});
+  let got=0;
   await Promise.all(need.map(async ([type,it])=>{
     const bid=_blobId(type,it.id);
-    try{const d=await col.doc(bid).get();if(d.exists&&d.data()&&d.data().img){it.img=d.data().img;_uploadedBlobs.add(bid);}}catch(e){}
+    try{const d=await col.doc(bid).get();if(d.exists&&d.data()&&d.data().img){it.img=d.data().img;_uploadedBlobs.add(bid);got++;}}catch(e){}
   }));
+  if(got)_persistBlobIds();
 }
 /* 데이터가 실제로 바뀌었는지 가볍게 판별(이미지 제외, 개수+핵심 타임스탬프) — 변화 없으면 재렌더·표시를 건너뛰어 불필요한 새로고침 방지 */
 function _dataSig(){
@@ -1112,18 +1119,35 @@ async function loadFromFirestore(quiet){
     return changed;
   }catch(e){console.error('[Firestore] 로드 실패:',e);if(!quiet)showSync('error','❌ 동기화 실패');return false;}
 }
+/* 💾 로컬 저장 — 절대 throw 하지 않음. localStorage 용량초과(QuotaExceeded)가 나도 동기화 체인이 끊기지 않게:
+   ① 작은 핵심 기록(답·조회·오답 등)을 먼저 저장(큰 이미지 키가 공간을 다 먹어 핵심 기록까지 유실되는 것 방지)
+   ② 이미지 키(_memos/_uexpl)는 마지막 — 공간 부족 시 클라우드에 이미 올라간 사진부터 제외하고 재시도,
+      그래도 부족하면 사진 전부 제외(텍스트 보존, 사진은 클라우드 blob에서 다시 받음). 같은 origin의 다른 앱(msk 캐시 등)이
+      10MB 공유 한도를 잠식해 실제로 임박한 상황임 */
+let _quotaWarned=false;
+function _lsSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
 function _saveLocal(){
-  localStorage.setItem(PREFIX+'_wrong',JSON.stringify(wrongNotes));
-  localStorage.setItem(PREFIX+'_memos',JSON.stringify(memoNotes));
-  localStorage.setItem(PREFIX+'_views',JSON.stringify(viewData));
-  localStorage.setItem(PREFIX+'_answers',JSON.stringify(answerData));
-  localStorage.setItem(PREFIX+'_repeat',JSON.stringify(repeatMarks));
-  localStorage.setItem(PREFIX+'_mnem',JSON.stringify(mnemonics));
-  localStorage.setItem(PREFIX+'_uexpl',JSON.stringify(userExpl));
-  localStorage.setItem(PREFIX+'_studylog',JSON.stringify(studyLog));
-  localStorage.setItem(PREFIX+'_examhist',JSON.stringify(examHistory));
-  localStorage.setItem(PREFIX+'_dailygoal',String(dailyGoal));
-  localStorage.setItem(PREFIX+'_examused',JSON.stringify(examUsed));
+  try{
+    let full=false;
+    full=!_lsSet(PREFIX+'_wrong',JSON.stringify(wrongNotes))||full;
+    full=!_lsSet(PREFIX+'_views',JSON.stringify(viewData))||full;
+    full=!_lsSet(PREFIX+'_answers',JSON.stringify(answerData))||full;
+    full=!_lsSet(PREFIX+'_repeat',JSON.stringify(repeatMarks))||full;
+    full=!_lsSet(PREFIX+'_mnem',JSON.stringify(mnemonics))||full;
+    full=!_lsSet(PREFIX+'_studylog',JSON.stringify(studyLog))||full;
+    full=!_lsSet(PREFIX+'_examhist',JSON.stringify(examHistory))||full;
+    full=!_lsSet(PREFIX+'_dailygoal',String(dailyGoal))||full;
+    full=!_lsSet(PREFIX+'_examused',JSON.stringify(examUsed))||full;
+    [['_memos','m',memoNotes],['_uexpl','e',userExpl]].forEach(([k,t,arr])=>{
+      if(_lsSet(PREFIX+k,JSON.stringify(arr||[])))return;
+      const lighter=(arr||[]).map(it=>{if(it&&it.img&&_uploadedBlobs.has(_blobId(t,it.id))){const o={...it};delete o.img;o._img=1;return o;}return it;});
+      /* lighter도 실패 — 남은 큰 덩어리는 '미업로드 사진'인데, 클라우드에 없는 유일본일 수 있어 절대 버리지 않음.
+         기존 저장값을 그대로 두고(파괴적 덮어쓰기 금지) 업로드를 재촉 → 업로드 완료 후 다음 _saveLocal에서 lighter가 자연 해소 */
+      if(!_lsSet(PREFIX+k,JSON.stringify(lighter)))pendingSync=true;
+      full=true;
+    });
+    if(full&&!_quotaWarned){_quotaWarned=true;try{showSync('error','📦 브라우저 저장공간 부족 — 일부 사진은 클라우드에만 보관됩니다');}catch(_){}}
+  }catch(e){console.warn('[saveLocal] 실패',e);}
 }
 function syncToCloud(){_saveLocal();pendingSync=true;if(!firestoreReady||!currentUser)return;clearTimeout(syncDebounceTimer);syncDebounceTimer=setTimeout(()=>saveToFirestore(0),1500);}
 /* 디바운스(1.5s)를 기다리지 않고 즉시 클라우드로 밀어냄 — 화면 숨김/탭 종료 직전에 호출. 바뀐 게 없으면 no-op */
@@ -1155,11 +1179,17 @@ async function saveToFirestore(retryCount){
       }
     }catch(preErr){/* 오프라인 등 사전 읽기 실패 → 로컬 그대로 큐잉(다음 온라인때 정상화) */}
     /* 🖼️ 이미지는 blob 서브컬렉션으로 따로 업로드 → 메인 문서엔 경량(_img 플래그)만 기록해 1MB 한도 회피 */
-    await _uploadBlobs();
+    const blobsOk=await _uploadBlobs();
     const rt=localStorage.getItem(PREFIX+'_resetToken');/* 토큰을 클라우드에도 기록해 다른 기기의 재초기화 방지 */
-    await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:_lightItems(memoNotes),jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:_lightItems(userExpl),jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:_lightItems(memoNotes),jm_viewData:viewData,jm_answerData:answerData,jm_repeatMarks:repeatMarks,jm_mnemonics:mnemonics,jm_studyLog:studyLog,jm_examHistory:examHistory,jm_dailyGoal:dailyGoal,jm_userExpl:_lightItems(userExpl),jm_examUsed:examUsed,...(rt?{jm_resetToken:rt}:{}),jm_appVersion:APP_VERSION,jm_lastUpdated:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     setLastSync(Date.now());ok=true;
-  }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패');pendingSync=true;if(retryCount<3){setTimeout(()=>saveToFirestore(retryCount+1),2000*(retryCount+1));}}
+    if(!blobsOk)pendingSync=true;/* 사진 일부 업로드 실패 → 다음 저장 때 자동 재시도(장부에 없는 것만) */
+  }catch(e){console.error('[Firestore] 저장 실패('+retryCount+'):',e);showSync('error','❌ 저장 실패'+(e&&e.code?' · '+e.code:''));pendingSync=true;
+    /* 영구 오류(페이로드 초과·권한·인증)는 즉시 재시도로 안 풀림 — 2s/4s/6s 체인은 생략(120초 주기 flushSync가 어차피 재시도)하고,
+       구버전 캐시로 도는 세션일 가능성이 크니 업데이트 체크(새 버전이면 강제 새로고침). 5분 스로틀로 index.html 재다운로드 남발 방지 */
+    const _perm=e&&(e.code==='invalid-argument'||e.code==='permission-denied'||e.code==='unauthenticated');
+    if(_perm){if(Date.now()-_lastPermChk>300000){_lastPermChk=Date.now();try{window._checkForUpdate&&window._checkForUpdate();}catch(_){}}}
+    else if(retryCount<3){setTimeout(()=>saveToFirestore(retryCount+1),2000*(retryCount+1));}}
   finally{syncInFlight=false;}
   return ok;
 }
@@ -3207,7 +3237,13 @@ function saveUserExpl(){
   const q=_explCurQ();if(!q)return;const i=document.getElementById('uexplInput');
   const t=i?i.value.trim():'';
   if(!t&&!pendingExplImg){alert('해설 내용이나 사진을 입력하세요');return;}
-  if(editingExplId){const n=userExpl.find(x=>x.id===editingExplId);if(n){n.text=t;n.img=pendingExplImg||null;n.edited=Date.now();}}
+  if(editingExplId){const n=userExpl.find(x=>x.id===editingExplId);if(n){
+    /* 사진이 교체되면 업로드 장부를 무효화해 새 사진이 같은 blob id로 클라우드에 덮어써지게 함(멱등 set).
+       사진을 명시적으로 제거한 경우(이전에 보이던 사진을 ✕로 뺀 채 저장)는 _img 플래그도 함께 제거.
+       단, 사진이 아직 blob에서 미복원된 상태(n.img 없음 + _img:1)의 텍스트만 수정은 플래그·장부를 건드리지 않음 */
+    if(pendingExplImg&&n.img!==pendingExplImg){_uploadedBlobs.delete(_blobId('e',n.id));_persistBlobIds();}
+    else if(!pendingExplImg&&n.img){delete n._img;_uploadedBlobs.delete(_blobId('e',n.id));_persistBlobIds();}
+    n.text=t;n.img=pendingExplImg||null;n.edited=Date.now();}}
   else{const k=getQKey(q);userExpl.push({id:Date.now(),qKey:k,section:q.section,qNum:q.num,text:t,img:pendingExplImg||null,created:Date.now()});}
   editingExplId=null;pendingExplImg=null;explEditOpen=false;
   syncToCloud();_explRerender();
