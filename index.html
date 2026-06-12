@@ -533,6 +533,33 @@ body{font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',s
 .flash-done h2{font-size:24px;font-weight:800;color:var(--heading1);margin-bottom:8px}
 .flash-done p{font-size:14px;color:var(--text2);line-height:1.7}
 
+/* ===== 니모닉 전용 플래시카드 (앞면 키워드 → 뒷면 정답) ===== */
+.flashcard.mnem-card,.flashcard.mnem-card .flash-inner{min-height:380px}
+.ff-mnem-front{margin:auto 0;text-align:center;font-size:26px;font-weight:800;color:var(--heading1);line-height:1.55;padding:24px 10px;overflow-wrap:break-word;white-space:pre-wrap}
+.ff-mnem-front.memo{font-size:18px;color:var(--text2)}
+.ff-mnem-front.memo span{display:block;margin-top:9px;font-size:13px;font-weight:600;color:var(--text3)}
+.ff-mnem-q{font-size:15px;font-weight:800;color:var(--gold-deep);margin-bottom:11px;padding-bottom:11px;border-bottom:1px dashed rgba(111,158,44,.45);overflow-wrap:break-word}
+.ff-mnem-back{font-size:17px;font-weight:700;color:var(--heading1);line-height:1.75;white-space:pre-wrap;overflow-wrap:break-word}
+.mnem-src-btn{width:100%;padding:12px;margin-bottom:10px;border:1px solid var(--border2);border-radius:12px;background:#fff;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s}
+.mnem-src-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* 출처 문제 미리보기 모달 — 덱 진행을 유지한 채 조회 (이미지 라이트박스 99999보다 아래) */
+.mnem-src-overlay{position:fixed;inset:0;z-index:99990;background:rgba(10,30,20,.5);display:flex;align-items:center;justify-content:center;padding:18px;animation:fadeIn .2s}
+.mnem-src-modal{background:#fff;border-radius:16px;max-width:760px;width:100%;max-height:88vh;max-height:88dvh;display:flex;flex-direction:column;box-shadow:0 24px 60px -18px rgba(0,0,0,.45);overflow:hidden}
+.ms-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);font-size:14px;font-weight:800;color:var(--heading1)}
+.ms-close{border:none;background:none;font-size:18px;cursor:pointer;color:var(--text3);padding:2px 7px;font-family:inherit}
+.ms-close:hover{color:var(--wrong)}
+.ms-body{padding:16px 18px;overflow:auto;overscroll-behavior:contain}
+.ms-body img{width:100%;max-width:100%;border-radius:10px;margin-top:10px;box-shadow:var(--shadow-sm);cursor:zoom-in}
+.ms-q{font-size:14.5px;font-weight:600;color:var(--body-text);line-height:1.7;white-space:pre-wrap;overflow-wrap:break-word}
+.ms-ansbox{margin-top:14px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.ms-ansbox summary{cursor:pointer;padding:11px 14px;font-size:13px;font-weight:800;color:var(--accent-deep);background:var(--mint);list-style:none}
+.ms-ansbox summary::-webkit-details-marker{display:none}
+.ms-ansbox .ms-ansin{padding:12px 14px}
+.ms-ans{font-size:14px;font-weight:800;color:var(--correct)}
+.ms-foot{padding:12px 18px;border-top:1px solid var(--border)}
+.ms-goto{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--limebtn),var(--limebtn2));color:var(--ink);font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;transition:filter .15s}
+.ms-goto:hover{filter:brightness(1.05)}
+
 /* ===== EXAM MODE ===== */
 .exam-wrap{max-width:840px;margin:0 auto}
 .exam-cfg{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);margin-bottom:14px}
@@ -1108,7 +1135,7 @@ html,body{overscroll-behavior-y:none}
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260612-2110';
+const APP_VERSION='20260613-0848';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -2783,7 +2810,7 @@ let viewMode='welcome',practiceSet=null,currentTopicGenre=null;
 let mnemonics=[],studyLog={},examHistory=[],dailyGoal=20,pendingMemoImg=null,userExpl=[],pendingExplImg=null,explEditOpen=false,editingExplId=null;
 /* 내 해설 편집 컨텍스트 — 퀴즈 밖(모의고사 다시보기 등)에서도 같은 편집기를 재사용하기 위한 호스트 */
 let explHostQ=null,explRerenderFn=null;
-let flashDeck=[],flashIdx=0,flashFlipped=false,flashStudied=null,flashTitle='',flashTotal=0;
+let flashDeck=[],flashIdx=0,flashFlipped=false,flashStudied=null,flashTitle='',flashTotal=0,flashMode='q';/* 'q'=문제 카드, 'mnem'=니모닉 카드(앞면→뒷면) */
 let examQuestions=[],examIdx=0,examAnswers={},examStartTs=0,examTimerId=null,examLimitSec=0,examConfig={mode:'section',sections:[],chapters:[],count:20,timer:true};
 let examUsed={};/* 모의고사 무중복 한바퀴: 출제된 문제 qKey 누적(회차 단위) */
 
@@ -3711,7 +3738,6 @@ function clearPendingExplImg(){pendingExplImg=null;renderPendingExplImg();}
 /* ---------- 암기카드 (플래시카드) ---------- */
 function deckWrong(){return QUESTIONS.filter(q=>isWrongMember(getQKey(q)));}
 function deckRepeat(){return QUESTIONS.filter(q=>isMarkedForRepeat(getQKey(q)));}
-function deckMnem(){return QUESTIONS.filter(q=>mnemonics.some(m=>m.qKey===getQKey(q)));}
 function deckAll(){return QUESTIONS.filter(q=>q.section!=='📖 사용법');}
 function deckSection(name){return QUESTIONS.filter(q=>q.section===name);}
 function _flashShow(){['welcomeScreen','gridContainer','quizContainer','examContainer'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});document.getElementById('flashContainer').style.display='block';document.getElementById('backBtn').style.display='none';document.getElementById('headerProgress').textContent='';setNav('flash');if(window.innerWidth<=768)closeSidebarMobile();}
@@ -3723,7 +3749,7 @@ function openFlashSetup(){
   let h='<div class="flash-wrap"><div class="flash-setup"><h2>🎴 암기카드</h2><div class="fs-sub">카드를 보고 머릿속으로 답한 뒤 뒤집어 확인하세요. \'어려움\'으로 표시한 카드는 다시 나옵니다.</div><div class="deck-grid">';
   h+=deckBtn('❌','오답 모음',deckWrong().length,"startFlash(deckWrong(),'오답 모음')");
   h+=deckBtn('🔁','반복 표시',deckRepeat().length,"startFlash(deckRepeat(),'반복 표시')");
-  h+=deckBtn('💡','니모닉 카드',deckMnem().length,"startFlash(deckMnem(),'니모닉 카드')");
+  h+=deckBtn('💡','니모닉 카드',mnemonics.length,"startMnemFlash()");
   h+=deckBtn('📚','전체 문제',deckAll().length,"startFlash(deckAll(),'전체 문제')");
   h+='</div>';
   const secs=SECTIONS.filter(s=>s.questions.length>0&&s.name!=='📖 사용법');
@@ -3733,7 +3759,7 @@ function openFlashSetup(){
 }
 function startFlash(list,title){
   if(!list||!list.length){alert('해당하는 카드가 없습니다.');return;}
-  flashDeck=shuffle(list);flashIdx=0;flashFlipped=false;flashStudied=new Set();flashTotal=flashDeck.length;flashTitle=title||'카드';
+  flashMode='q';flashDeck=shuffle(list);flashIdx=0;flashFlipped=false;flashStudied=new Set();flashTotal=flashDeck.length;flashTitle=title||'카드';
   viewMode='flash';_flashShow();document.getElementById('headerTitle').textContent='🎴 '+flashTitle;
   renderFlash();document.getElementById('contentArea').scrollTop=0;
 }
@@ -3741,6 +3767,7 @@ function flashRateHtml(){return '<div class="flash-rate"><button class="rate-btn
 function renderFlash(){
   const c=document.getElementById('flashContainer');
   if(flashIdx>=flashDeck.length){renderFlashDone();return;}
+  if(flashMode==='mnem'){renderMnemFlash(c);return;}
   const q=flashDeck[flashIdx],k=getQKey(q);
   const prog=flashTotal?Math.round(flashStudied.size/flashTotal*100):0;
   let h='<div class="flash-wrap">';
@@ -3764,8 +3791,71 @@ function renderFlash(){
 }
 function cardTap(){if(!flashFlipped)flipFlash();}
 function flipFlash(){flashFlipped=true;const el=document.getElementById('flashCardEl');if(el)el.classList.add('flipped');const ctr=document.getElementById('flashControls');if(ctr)ctr.innerHTML=flashRateHtml();}
-function rateFlash(rating){const q=flashDeck[flashIdx];if(q){flashStudied.add(getQKey(q));if(rating==='hard')flashDeck.push(q);}flashIdx++;flashFlipped=false;renderFlash();document.getElementById('contentArea').scrollTop=0;}
+function rateFlash(rating){const q=flashDeck[flashIdx];if(q){flashStudied.add(flashMode==='mnem'?'m'+q.id:getQKey(q));if(rating==='hard')flashDeck.push(q);}flashIdx++;flashFlipped=false;renderFlash();document.getElementById('contentArea').scrollTop=0;}
 function flashPrev(){if(flashIdx>0){flashIdx--;flashFlipped=false;renderFlash();document.getElementById('contentArea').scrollTop=0;}}
+
+/* ---------- 니모닉 전용 덱 — 카드 1장 = 니모닉 1개 (앞면 키워드 → 탭하면 뒷면 정답) ---------- */
+function startMnemFlash(){
+  if(!mnemonics.length){alert('아직 만든 니모닉이 없습니다.\n문제 풀이 화면의 "💡 암기법 · 니모닉"에서 추가하세요.');return;}
+  flashMode='mnem';flashDeck=shuffle(mnemonics);flashIdx=0;flashFlipped=false;flashStudied=new Set();flashTotal=flashDeck.length;flashTitle='니모닉 카드';
+  viewMode='flash';_flashShow();document.getElementById('headerTitle').textContent='🎴 니모닉 카드';
+  renderFlash();document.getElementById('contentArea').scrollTop=0;
+}
+function renderMnemFlash(c){
+  const n=flashDeck[flashIdx];
+  const prog=flashTotal?Math.round(flashStudied.size/flashTotal*100):0;
+  const srcLabel=escapeHtml((n.section||'섹션 미상')+(n.qNum!=null?' · Q'+n.qNum:''));
+  let h='<div class="flash-wrap">';
+  h+='<div class="flash-progress"><div class="fp-bar"><i data-fill="'+prog+'%" style="width:0"></i></div><div class="fp-txt">'+flashStudied.size+' / '+flashTotal+' 학습</div></div>';
+  h+='<div class="flashcard mnem-card'+(flashFlipped?' flipped':'')+'" id="flashCardEl" onclick="cardTap()"><div class="flash-inner">';
+  h+='<div class="flash-face front"><div class="ff-tag">💡 니모닉 · '+srcLabel+'</div>';
+  if(n.front)h+='<div class="ff-mnem-front">'+escapeHtml(n.front)+'</div>';
+  else h+='<div class="ff-mnem-front memo">📝 메모 카드<span>이 문제에 적어둔 암기 내용을 떠올려보세요</span></div>';
+  h+='<div class="ff-hint">탭하면 정답(뒷면)이 보입니다 👆</div></div>';
+  h+='<div class="flash-face back"><div class="ff-tag">✅ 정답 · 뒷면</div>';
+  if(n.front)h+='<div class="ff-mnem-q">'+escapeHtml(n.front)+'</div>';
+  h+='<div class="ff-mnem-back">'+escapeHtml(n.text)+'</div>';
+  h+='<div class="ff-hint">얼마나 잘 외웠나요? 아래에서 평가하세요 👇</div></div>';
+  h+='</div></div>';
+  h+='<button class="mnem-src-btn" onclick="openMnemSource('+n.id+')">📘 출처 문제 보기 — '+srcLabel+'</button>';
+  h+='<div id="flashControls">'+(flashFlipped?flashRateHtml():'<button class="flash-flip-btn" onclick="event.stopPropagation();flipFlash()">👁 정답 보기</button>')+'</div>';
+  h+='<div class="flash-bottom-nav"><button onclick="flashPrev()">← 이전</button><button onclick="goHome()">종료</button></div>';
+  h+='</div>';
+  c.innerHTML=h;animateDash();
+}
+/* 출처 문제 미리보기 모달 — 덱 진행 상태를 잃지 않고 어느 문제에서 나온 니모닉인지 조회 */
+function _mnemById(id){return mnemonics.find(m=>m.id===id)||(flashMode==='mnem'&&flashDeck[flashIdx]&&flashDeck[flashIdx].id===id?flashDeck[flashIdx]:null);}
+function openMnemSource(id){
+  if(document.getElementById('mnemSrcOverlay'))return;/* 키보드 Enter 연타 등으로 모달 중첩 방지 */
+  const n=_mnemById(id);if(!n)return;
+  const q=QUESTIONS.find(x=>getQKey(x)===n.qKey);
+  if(!q){alert('출처 문제를 찾을 수 없습니다.\n(문제 데이터가 변경·삭제되었을 수 있어요)');return;}
+  let b='';
+  if(q.question)b+='<div class="ms-q">'+escapeHtml(q.question)+'</div>';
+  (q.question_images||[]).forEach(img=>{b+='<img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});
+  if(!q.question&&!(q.question_images&&q.question_images.length))b+='<div class="ms-q" style="color:var(--text3)">(문제 본문이 없습니다)</div>';
+  b+='<details class="ms-ansbox"><summary>✅ 정답·해설 펼쳐보기</summary><div class="ms-ansin">';
+  b+='<div class="ms-ans">정답: '+q.answer+'번</div>';
+  if(q.explanation)b+='<div class="ms-q" style="margin-top:8px">'+escapeHtml(q.explanation)+'</div>';
+  (q.explanation_images||[]).forEach(img=>{b+='<img src="'+img+'" onclick="openLightbox(\''+img+'\')" loading="lazy">';});
+  b+='</div></details>';
+  const ov=document.createElement('div');ov.className='mnem-src-overlay';ov.id='mnemSrcOverlay';
+  ov.innerHTML='<div class="mnem-src-modal">'
+    +'<div class="ms-head"><span>📘 출처 문제 — '+escapeHtml(q.section)+' · Q'+q.num+'</span><button class="ms-close" onclick="closeMnemSource()">✕</button></div>'
+    +'<div class="ms-body">'+b+'</div>'
+    +'<div class="ms-foot"><button class="ms-goto" onclick="gotoMnemSource('+n.id+')">➡ 이 문제 풀이 화면으로 이동</button></div></div>';
+  ov.addEventListener('click',function(e){if(e.target===ov)closeMnemSource();});
+  document.body.appendChild(ov);
+}
+function closeMnemSource(){const ov=document.getElementById('mnemSrcOverlay');if(ov)ov.remove();}
+function gotoMnemSource(id){
+  closeMnemSource();
+  const n=_mnemById(id);if(!n)return;
+  const q=QUESTIONS.find(x=>getQKey(x)===n.qKey);
+  if(!q){alert('출처 문제를 찾을 수 없습니다.');return;}
+  const si=SECTIONS.findIndex(s=>s.name===q.section);if(si>=0)currentSectionIdx=si;
+  loadQuestion(q);
+}
 function renderFlashDone(){const c=document.getElementById('flashContainer');c.innerHTML='<div class="flash-wrap"><div class="flash-done"><div class="fd-ico">🎉</div><h2>'+flashStudied.size+'장 학습 완료!</h2><p>「'+escapeHtml(flashTitle)+'」 덱을 모두 돌았어요.<br>꾸준함이 합격을 만듭니다 ☕</p><div style="display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap"><button class="exam-start-btn" style="width:auto;padding:13px 22px" onclick="openFlashSetup()">🎴 다른 덱 학습</button><button class="exam-start-btn" style="width:auto;padding:13px 22px;background:#fff;color:var(--text2);border:1px solid var(--border2);box-shadow:none" onclick="goHome()">🏠 홈으로</button></div></div></div>';launchConfetti();}
 
 /* ---------- 모의고사 ---------- */
