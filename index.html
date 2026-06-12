@@ -999,6 +999,9 @@ html,body{overscroll-behavior-y:none}
   .topic-cards{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 }
 
+/* [추가] 노트 목록 복귀 하이라이트 — 패널 재오픈 시 마지막 본 항목 표시(다크 셸 위 라임) */
+.memo-item-flash{box-shadow:inset 0 0 0 2px var(--lime,#b8f24a)!important;background:rgba(184,242,74,.12)!important}
+
 /* [추가] 모바일 메모패널(풀스크린, z150)이 열린 동안 그 위에 떠 있던
    햄버거(z200)·💾🕒 FAB(z9998)가 패널 제목과 × 닫기 버튼을 가리던 문제 —
    패널 열림 중엔 셋 다 숨김. :has() 미지원 구형은 현행 유지(악화 없음) */
@@ -1060,7 +1063,7 @@ html,body{overscroll-behavior-y:none}
   <div class="sidebar-divider"></div>
   <div class="book-list" id="bookList"></div>
   <div class="sidebar-bottom">
-    <button onclick="toggleMemo()">📝 메모 <span class="count" id="memoCount">0</span></button>
+    <button onclick="showMemoNote()">📝 메모 <span class="count" id="memoCount">0</span></button>
     <button onclick="showRepeatNote()">🔁 반복노트 <span class="count" id="repeatCount" style="background:var(--repeat);color:#fff">0</span></button>
     <button onclick="showWrongNote()">❌ 오답노트 <span class="count wrong-count" id="wrongCount">0</span></button>
     <div id="appVer" style="text-align:center;font-size:9.5px;opacity:.5;margin-top:5px;letter-spacing:.3px"></div>
@@ -1102,7 +1105,7 @@ html,body{overscroll-behavior-y:none}
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260612-1954';
+const APP_VERSION='20260612-2040';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -3173,7 +3176,7 @@ function repeatBtnHtml(k){const m=isMarkedForRepeat(k);return '<button class="me
 /* 반복 버튼을 전체 재렌더 없이 제자리에서 갱신(모의고사 진행/다시보기용) */
 function applyRepeatBtnStyle(b){const k=b.getAttribute('data-rk');const m=isMarkedForRepeat(k);b.style.background=m?'var(--repeat)':'#fff';b.style.color=m?'#fff':'var(--text2)';b.style.borderColor=m?'var(--repeat)':'var(--border2)';b.title=m?'반복 표시 해제':'반복 표시 추가';b.innerHTML='🔁 '+(m?'반복 표시됨':'반복 표시');}
 function toggleRepeatMark(qKey){const cur=isMarkedForRepeat(qKey);repeatMarks[qKey]={marked:!cur,ts:Date.now()};syncToCloud();updateRepeatCount();if(currentQ&&getQKey(currentQ)===qKey)renderQuiz();document.querySelectorAll('.meta-repeat-btn').forEach(function(b){if(b.getAttribute('data-rk')===qKey)applyRepeatBtnStyle(b);});if(document.getElementById('memoPanel').classList.contains('open')&&currentMemoTab==='repeat')renderRepeatList();buildBookList();}
-function showRepeatNote(){const p=document.getElementById('memoPanel');if(!p.classList.contains('open'))p.classList.add('open');switchMemoTab('repeat');document.getElementById('memoWrongPreview').style.display='none';}
+function showRepeatNote(){const p=document.getElementById('memoPanel');if(!p.classList.contains('open'))p.classList.add('open');switchMemoTab('repeat');document.getElementById('memoWrongPreview').style.display='none';_restoreMemoState();}
 function renderRepeatList(){
   const markedKeys=Object.keys(repeatMarks).filter(k=>repeatMarks[k]&&repeatMarks[k].marked);
   const markedQs=QUESTIONS.filter(q=>markedKeys.includes(getQKey(q)));
@@ -3190,10 +3193,39 @@ function renderRepeatList(){
     const _g=normChapter(q.chapter);const _cb=_g?'<span class="chap-badge">'+escapeHtml((CHAPTER_ICON[_g]||'🧩')+' '+_g)+'</span>':'';
     h+='<div class="memo-item" data-qkey="'+k+'" onclick="jumpToQ(\''+k+'\',\''+String(q.section).replace(/\x27/g,"\\\x27")+'\','+q.num+')" title="클릭 → 문제로 이동"><div class="memo-q">'+_cb+'🔁 '+escapeHtml(q.section)+' Q'+q.num+statusBadge+'</div><div class="memo-text" style="font-size:12px;color:var(--text2);margin-top:2px">'+escapeHtml(q.question.substring(0,60))+'...</div><button class="memo-del" title="반복 표시 해제" onclick="event.stopPropagation();toggleRepeatMark(\''+k+'\')">×</button></div>';
   });
-  l.innerHTML=h;
+  const _st=l.scrollTop;l.innerHTML=h;l.scrollTop=_st;/* 재렌더 시 스크롤 위치 보존 */
 }
-function toggleMemo(){const p=document.getElementById('memoPanel');p.classList.toggle('open');if(p.classList.contains('open'))switchMemoTab('memo');}
-function closeMemo(e){if(e){e.stopPropagation();e.preventDefault();}document.getElementById('memoPanel').classList.remove('open');}
+/* 📍 패널 상태 기억 — 닫거나 문제로 점프할 때 탭·필터·스크롤·마지막 본 항목을 저장하고,
+   다시 열면 그 자리로 복귀(마지막 본 항목은 가운데로 스크롤 + 잠깐 하이라이트).
+   "오답노트에서 문제 보고 돌아오면 맨 위부터 다시 시작" 불편 해소 */
+let _memoSaved=null;
+function _captureMemoState(qKey){
+  const p=document.getElementById('memoPanel');if(!p||!p.classList.contains('open'))return;
+  const tc=document.querySelector('.memo-tab-content.active .memo-list');
+  _memoSaved={tab:currentMemoTab,filter:currentMemoFilter,scroll:tc?tc.scrollTop:0,qKey:qKey||null};
+}
+function _restoreMemoState(){
+  if(!_memoSaved||_memoSaved.tab!==currentMemoTab)return;
+  if(_memoSaved.filter&&_memoSaved.filter!==currentMemoFilter){currentMemoFilter=_memoSaved.filter;renderFilterChips();renderMemoPanel();}
+  const tc=document.querySelector('.memo-tab-content.active .memo-list');if(!tc)return;
+  const k=_memoSaved.qKey,sc=_memoSaved.scroll||0;
+  requestAnimationFrame(()=>{
+    let it=null;
+    if(k){const els=tc.querySelectorAll('.memo-item[data-qkey]');for(let i=0;i<els.length;i++){if(els[i].getAttribute('data-qkey')===k){it=els[i];break;}}}
+    if(it){it.scrollIntoView({block:'center'});it.classList.add('memo-item-flash');setTimeout(()=>{it.classList.remove('memo-item-flash');},1600);}
+    else tc.scrollTop=sc;/* 항목이 사라졌으면(삭제 등) 스크롤 위치로만 복귀 */
+  });
+}
+function toggleMemo(){
+  const p=document.getElementById('memoPanel');
+  if(p.classList.contains('open')){_captureMemoState();p.classList.remove('open');return;}
+  p.classList.add('open');
+  switchMemoTab(_memoSaved?_memoSaved.tab:'memo');/* 📋 FAB는 마지막에 보던 탭으로 복귀 */
+  if(_memoSaved&&_memoSaved.tab==='wrong')document.getElementById('memoWrongPreview').style.display='none';
+  _restoreMemoState();
+}
+function showMemoNote(){const p=document.getElementById('memoPanel');if(!p.classList.contains('open'))p.classList.add('open');switchMemoTab('memo');_restoreMemoState();}
+function closeMemo(e){if(e){e.stopPropagation();e.preventDefault();}_captureMemoState();document.getElementById('memoPanel').classList.remove('open');}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
 function switchMemoTab(t){
   currentMemoTab=t;currentMemoFilter='all';
@@ -3238,8 +3270,8 @@ function renderMemoPanel(){
   const l=document.getElementById('memoList');
   if(!f.length){l.innerHTML='<div class="memo-empty">메모가 없습니다<br><span style="font-size:11px;color:var(--text3);margin-top:8px;display:block">문제 아래 메모 입력란에서 추가하세요</span></div>';return;}
   let h='';
-  f.sort((a,b)=>b.created-a.created).forEach(n=>{h+='<div class="memo-item note" onclick="jumpToQ(\''+n.qKey+'\',\''+String(n.section).replace(/\x27/g,"\\\x27")+'\','+n.qNum+')" title="클릭 → 문제로 이동"><div class="memo-q">'+escapeHtml(n.section)+' Q'+n.qNum+' · '+escapeHtml(n.qText)+'...</div>'+(n.text?'<div class="memo-text">'+escapeHtml(n.text)+'</div>':'')+(n.img?'<img class="memo-img" src="'+n.img+'" onclick="event.stopPropagation();openLightbox(this.src)">':'')+'<button class="memo-del" onclick="event.stopPropagation();deleteNote(\'memo\','+n.id+')">×</button></div>';});
-  l.innerHTML=h;
+  f.sort((a,b)=>b.created-a.created).forEach(n=>{h+='<div class="memo-item note" data-qkey="'+escapeHtml(n.qKey)+'" onclick="jumpToQ(\''+n.qKey+'\',\''+String(n.section).replace(/\x27/g,"\\\x27")+'\','+n.qNum+')" title="클릭 → 문제로 이동"><div class="memo-q">'+escapeHtml(n.section)+' Q'+n.qNum+' · '+escapeHtml(n.qText)+'...</div>'+(n.text?'<div class="memo-text">'+escapeHtml(n.text)+'</div>':'')+(n.img?'<img class="memo-img" src="'+n.img+'" onclick="event.stopPropagation();openLightbox(this.src)">':'')+'<button class="memo-del" onclick="event.stopPropagation();deleteNote(\'memo\','+n.id+')">×</button></div>';});
+  const _st=l.scrollTop;l.innerHTML=h;l.scrollTop=_st;/* 재렌더 시 스크롤 위치 보존 */
 }
 /* 👁🌈 오답노트 조회 횟수별 색상 — 1회 노랑 → 2회 초록 → 3회 파랑 → … (팔레트 초과 시 마지막 색 유지) */
 const WRONG_VIEW_COLORS=['#f1c40f','#27ae60','#2e86de','#8e44ad','#e91e8c','#e67e22','#16a085','#c0392b','#795548','#34495e','#9acd32','#00bcd4','#ff5722','#607d8b','#d4af37'];
@@ -3295,10 +3327,11 @@ function renderWrongList(){
     else if(a&&a.correct)st='<div style="font-size:11px;color:var(--correct);margin-top:3px;font-weight:600">✅ 재풀이 정답'+(m.sel?' (전에 틀린 답: '+m.sel+'번)':'')+'</div>';
     else st='<div style="font-size:11px;color:var(--text2);margin-top:3px;font-weight:600">🔄 재풀이 대기'+(m.sel?' · 전에 틀린 답: '+m.sel+'번':'')+'</div>';
     h+='<div class="memo-item wrong" data-qkey="'+escapeHtml(k)+'"'+bd+' onclick="jumpToQWrong(\''+kj+'\',\''+jsStr(q.section)+'\','+q.num+')" title="클릭 → 문제로 이동 (조회수 +1)"><div class="memo-q">'+cb+escapeHtml(q.section)+' Q'+q.num+wrongViewChip(n,kj)+'</div><div class="memo-text" style="font-size:12px;color:var(--text2);margin-top:2px">'+escapeHtml(txt)+'...</div>'+st+'<button class="memo-del" title="오답노트에서 삭제" onclick="event.stopPropagation();deleteWrongOne(\''+kj+'\')">×</button></div>';});
-  l.innerHTML=h;
+  const _st=l.scrollTop;l.innerHTML=h;l.scrollTop=_st;/* 재렌더(조회수·삭제 등) 시 스크롤 위치 보존 */
 }
 function deleteWrongOne(qKey){if(!confirm('오답노트에서 이 문제를 삭제할까요? (틀린 풀이 기록도 초기화되어 다시 풀 수 있습니다)'))return;wrongMarks[qKey]={marked:false,ts:Date.now()};/* 직접 삭제 — 유일하게 오답노트에서 빠지는 경로 */if(answerData[qKey]&&!answerData[qKey].correct){answerDeleted[qKey]={t:Date.now(),a:(answerData[qKey].timestamp||0)};delete answerData[qKey];}syncToCloud();renderMemoPanel();updateMemoCount();updateStats();buildBookList();if(currentQ&&getQKey(currentQ)===qKey)renderQuiz();}
 function jumpToQ(qKey,fbSection,fbNum){
+  _captureMemoState(qKey);/* 점프 직전 위치 저장 — 패널 다시 열면 이 항목으로 복귀 */
   let q=QUESTIONS.find(q=>getQKey(q)===qKey);
   if(!q&&fbSection!=null&&fbNum!=null){q=QUESTIONS.find(qq=>qq.section===fbSection&&String(qq.num)===String(fbNum));}
   if(!q){alert('해당 문제를 찾을 수 없습니다.');return;}
@@ -3306,7 +3339,7 @@ function jumpToQ(qKey,fbSection,fbNum){
   if(window.innerWidth<=900){const p=document.getElementById('memoPanel');if(p)p.classList.remove('open');}
   loadQuestion(q);
 }
-function showWrongNote(){const p=document.getElementById('memoPanel');if(!p.classList.contains('open'))p.classList.add('open');switchMemoTab('wrong');document.getElementById('memoWrongPreview').style.display='none';}
+function showWrongNote(){const p=document.getElementById('memoPanel');if(!p.classList.contains('open'))p.classList.add('open');switchMemoTab('wrong');document.getElementById('memoWrongPreview').style.display='none';_restoreMemoState();}
 function exportNotes(){
   let t='===== 전문의 시험 공부 노트 =====\n\n';
   const wrongQs=QUESTIONS.filter(q=>isWrongMember(getQKey(q)));
