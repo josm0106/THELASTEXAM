@@ -999,6 +999,9 @@ html,body{overscroll-behavior-y:none}
   .topic-cards{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 }
 
+/* [추가] 문제지별 점수 배지(푼 문제 대비 정답률 100점 환산) — 다크 사이드바 시그니처 라임필 */
+.book-stat-score{background:linear-gradient(135deg,var(--lime,#b8f24a),var(--lime2,#a3e63a));color:var(--ink,#0e1813);font-weight:800}
+
 /* [추가] 노트 목록 복귀 하이라이트 — 패널 재오픈 시 마지막 본 항목 표시(다크 셸 위 라임) */
 .memo-item-flash{box-shadow:inset 0 0 0 2px var(--lime,#b8f24a)!important;background:rgba(184,242,74,.12)!important}
 
@@ -1105,7 +1108,7 @@ html,body{overscroll-behavior-y:none}
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260612-2040';
+const APP_VERSION='20260612-2110';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -2825,7 +2828,8 @@ function buildBookList(){
     item.onclick=()=>showGrid(si);
     let stats;
     if(qs.length===0){stats='<span class="book-stat-empty">문제 준비 중</span>';}
-    else{stats='<span class="book-stat-total">'+qs.length+'문제</span>'+(correct?'<span class="book-stat-done">✓'+correct+'</span>':'')+(wrong?'<span class="book-stat-wrong">✗'+wrong+'</span>':'')+'<span class="book-stat-pct">'+pct+'%</span>';}
+    else{const score=done?Math.round(correct/done*100):null;/* 점수 = 푼 문제 대비 정답률 100점 환산(완주 시 시험 점수와 동일) */
+      stats='<span class="book-stat-total">'+qs.length+'문제</span>'+(correct?'<span class="book-stat-done">✓'+correct+'</span>':'')+(wrong?'<span class="book-stat-wrong">✗'+wrong+'</span>':'')+'<span class="book-stat-pct">'+pct+'%</span>'+(score!=null?'<span class="book-stat-score" title="푼 문제 대비 정답률">'+score+'점</span>':'');}
     item.innerHTML='<div class="book-icon">'+sec.icon+'</div><div class="book-title">'+sec.name+'</div><div class="book-stats">'+stats+'</div>'+(qs.length?'<div class="book-progress"><div class="book-progress-bar" style="width:'+pct+'%"></div></div>':'');
     list.appendChild(item);
   });
@@ -2864,7 +2868,7 @@ function renderGrid(si){
   const done=qs.filter(q=>answerData[getQKey(q)]).length;
   const correct=qs.filter(q=>{const a=answerData[getQKey(q)];return a&&a.correct;}).length;
   let h='<div class="grid-view"><h2>'+sec.icon+' '+sec.name+'</h2>';
-  h+='<div class="grid-sub">'+qs.length+'문제 · '+done+'문제 풀이 완료 (정답 '+correct+', 오답 '+(done-correct)+')</div>';
+  h+='<div class="grid-sub">'+qs.length+'문제 · '+done+'문제 풀이 완료 (정답 '+correct+', 오답 '+(done-correct)+')'+(done?' · <b style="color:var(--accent-deep)">점수 '+Math.round(correct/done*100)+'점</b>':'')+'</div>';
   h+='<div class="grid-controls"><button class="active" onclick="gridFilter(\'all\',this)">전체</button><button onclick="gridFilter(\'unsolved\',this)">안 푼 문제</button><button onclick="gridFilter(\'wrong\',this)">오답만</button></div>';
   const hasChapters=qs.some(q=>q.chapter&&q.chapter!=='일반');
   if(hasChapters){
@@ -2970,7 +2974,7 @@ function renderTopicList(genre){
   const wrong=done-correct,unsolved=qs.length-done;
   const eg=String(genre).replace(/\x27/g,"\\\x27");
   let h='<div class="grid-view"><h2>'+ic+' '+escapeHtml(genre)+' 문제 목록</h2>';
-  h+='<div class="grid-sub">총 '+qs.length+'문제 · 푼 문제 '+done+'개 (✓정답 '+correct+' · ✗오답 '+wrong+') · <b>안 푼 문제 '+unsolved+'개</b></div>';
+  h+='<div class="grid-sub">총 '+qs.length+'문제 · 푼 문제 '+done+'개 (✓정답 '+correct+' · ✗오답 '+wrong+') · <b>안 푼 문제 '+unsolved+'개</b>'+(done?' · <b style="color:var(--accent-deep)">점수 '+Math.round(correct/done*100)+'점</b>':'')+'</div>';
   h+='<div class="topic-actions"><button class="tl-start" onclick="startTopicFrom(\''+eg+'\',\'all\')">📝 처음부터 풀기</button>';
   if(unsolved>0)h+='<button class="tl-start alt" onclick="startTopicFrom(\''+eg+'\',\'unsolved\')">🎯 안 푼 문제부터 풀기</button>';
   h+='</div>';
