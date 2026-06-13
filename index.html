@@ -1125,7 +1125,7 @@ html,body{overscroll-behavior-y:none}
     <div class="memo-tab-content" id="memoTabRepeat" style="display:none"><div class="memo-list" id="repeatList"><div class="memo-empty">반복 표시한 문제가 없습니다</div></div></div>
   </div>
   <div class="memo-wrong-preview" id="memoWrongPreview" style="display:none"></div>
-  <div class="memo-export"><button onclick="exportNotes()">📥 노트 내보내기</button><button class="btn-secondary" id="wvResetBtn" onclick="resetAllWrongViews()" style="display:none">🎨 조회 색깔 전체 초기화</button><button class="btn-secondary" id="clearTabBtn" onclick="clearCurrentTab()">🗑 전체 삭제</button></div>
+  <div class="memo-export"><button onclick="exportNotes()">📥 노트 내보내기</button><button class="btn-secondary" id="wvResetBtn" onclick="resetAllWrongViews()" style="display:none">🎨 조회 색깔 전체 초기화</button></div>
 </div>
 
 <!-- ===== Firebase SDK ===== -->
@@ -1135,7 +1135,7 @@ html,body{overscroll-behavior-y:none}
 
 <!-- ===== 자동 업데이트 체크 ===== -->
 <script>
-const APP_VERSION='20260613-0848';
+const APP_VERSION='20260613-1110';
 /* 🔁 캐시 강제 우회 새로고침 — iOS 사파리는 location.reload(true)를 무시하고 캐시를 다시 줘서
    새 버전이 영영 적용 안 되는 일이 있음. URL에 새 쿼리(?v=버전)를 붙여 강제로 새로 받게 함. */
 function _hardReload(v){try{const base=location.origin+location.pathname;location.replace(base+'?v='+encodeURIComponent(v||(''+Date.now())));}catch(e){location.reload();}}
@@ -1225,6 +1225,7 @@ function loadLocalData(){
   userExpl=JSON.parse(localStorage.getItem(PREFIX+'_uexpl')||'[]');
   examUsed=JSON.parse(localStorage.getItem(PREFIX+'_examused')||'{}');
   answerDeleted=JSON.parse(localStorage.getItem(PREFIX+'_adel')||'{}');
+  delItems=JSON.parse(localStorage.getItem(PREFIX+'_delitems')||'{}');
   wrongViews=JSON.parse(localStorage.getItem(PREFIX+'_wviews')||'{}');
   answerResetAll=parseInt(localStorage.getItem(PREFIX+'_aresetall')||'0',10)||0;
   wrongResetAll=parseInt(localStorage.getItem(PREFIX+'_wresetall')||'0',10)||0;
@@ -1266,6 +1267,18 @@ function _applyAnswerTombstones(){
     const dead=(typeof d==='number')?(ts<d):(ts<=_delA(d));
     if(dead)delete answerData[k];else delete answerDeleted[k];/* 묘비 이후 새로 푼 답 → 답 보존, 묘비 폐기 */
   }
+}
+/* 🪦 항목 묘비(delItems) — 니모닉·메모·내해설·오답메모·모의고사기록의 '삭제'가 union 머지로 부활하지 않게 함.
+   키='접두:id'(mn:니모닉/memo:메모/ue:내해설/eh:모의고사/wn:오답메모), 값=삭제시각(number).
+   묘비 시각보다 나중에 수정(edited)/생성(created)된 항목은 살리고 묘비 폐기(다른 기기서 그 후 다시 쓴 항목 보호). max-머지(단조)로 기기 간 안전. */
+function _applyItemTombstones(){
+  const f=(arr,p)=>(arr||[]).filter(it=>{
+    if(!it||it.id==null)return true;
+    const d=delItems[p+it.id];if(d==null)return true;
+    if(((it.edited||it.created)||0)>_delT(d)){delete delItems[p+it.id];return true;}
+    return false;
+  });
+  mnemonics=f(mnemonics,'mn:');memoNotes=f(memoNotes,'memo:');userExpl=f(userExpl,'ue:');examHistory=f(examHistory,'eh:');wrongNotes=f(wrongNotes,'wn:');
 }
 function _hasNewerDel(cloud,merged){const c=cloud||{};for(const k of Object.keys(merged||{})){if(_delT(merged[k])>_delT(c[k]))return true;}return false;}
 /* count(조회수)는 lastViewed가 오래돼도 머지로 커질 수 있어 시각 비교만으론 전파 누락 → 별도 판정 */
@@ -1332,7 +1345,7 @@ function _dataSig(){
   const oc=o=>Object.keys(o||{}).length;
   const mx=(o,k)=>{let m=0;for(const x in (o||{})){const t=(o[x]&&o[x][k])||0;if(t>m)m=t;}return m;};
   const mxn=o=>{let m=0;for(const x in (o||{})){const t=_delT(o[x]);if(t>m)m=t;}return m;};
-  return [oc(answerData),mx(answerData,'timestamp'),oc(viewData),mx(viewData,'lastViewed'),oc(repeatMarks),mx(repeatMarks,'ts'),(wrongNotes||[]).length,(memoNotes||[]).length,(mnemonics||[]).length,(examHistory||[]).length,(userExpl||[]).length,oc(examUsed),oc(studyLog),dailyGoal,oc(answerDeleted),mxn(answerDeleted),oc(wrongViews),mx(wrongViews,'lastViewed'),answerResetAll,wrongResetAll,wrongViewsResetAt,oc(wrongMarks),mx(wrongMarks,'ts')].join('|');
+  return [oc(answerData),mx(answerData,'timestamp'),oc(viewData),mx(viewData,'lastViewed'),oc(repeatMarks),mx(repeatMarks,'ts'),(wrongNotes||[]).length,(memoNotes||[]).length,(mnemonics||[]).length,(examHistory||[]).length,(userExpl||[]).length,oc(examUsed),oc(studyLog),dailyGoal,oc(answerDeleted),mxn(answerDeleted),oc(delItems),mxn(delItems),oc(wrongViews),mx(wrongViews,'lastViewed'),answerResetAll,wrongResetAll,wrongViewsResetAt,oc(wrongMarks),mx(wrongMarks,'ts')].join('|');
 }
 /* quiet=true(주기적 자동 당김)이면 변화가 있을 때만 화면 갱신/표시 → 평소엔 조용함. 변경여부(boolean) 반환 */
 async function loadFromFirestore(quiet){
@@ -1346,10 +1359,10 @@ async function loadFromFirestore(quiet){
       if(data.jm_resetToken===RESET_TOKEN){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}}
       const cw=data.jm_wrongNotes||[],cm=data.jm_memoNotes||[],cv=data.jm_viewData||{},ca=data.jm_answerData||{},cr=data.jm_repeatMarks||{};
       const cmn=data.jm_mnemonics||[],csl=data.jm_studyLog||{},ceh=data.jm_examHistory||[],cdg=data.jm_dailyGoal,cue=data.jm_userExpl||[],ceu=data.jm_examUsed||{};
-      const cad=data.jm_answerDeleted||{},cwv=data.jm_wrongViews||{},car=data.jm_answerResetAll||0,cwr=data.jm_wrongResetAll||0,cwvr=data.jm_wvResetAll||0,cwm=data.jm_wrongMarks||{};
+      const cad=data.jm_answerDeleted||{},cdi=data.jm_delItems||{},cwv=data.jm_wrongViews||{},car=data.jm_answerResetAll||0,cwr=data.jm_wrongResetAll||0,cwvr=data.jm_wvResetAll||0,cwm=data.jm_wrongMarks||{};
       const mw=_mergeArrById(cw,wrongNotes),mm=_mergeItemsKeepImg(cm,memoNotes),mv=_mergeObjByKey(cv,viewData,'lastViewed'),ma=_mergeObjByKey(ca,answerData,'timestamp'),mr=_mergeObjByKey(cr,repeatMarks,'ts');
       const mmn=_mergeArrById(cmn,mnemonics),msl=_mergeStudyLog(csl,studyLog),meh=_mergeArrById(ceh,examHistory),mue=_mergeItemsKeepImg(cue,userExpl);
-      const mad=_mergeDelMap(cad,answerDeleted),mwv=_mergeObjByKey(cwv,wrongViews,'lastViewed'),mwm=_mergeObjByKey(cwm,wrongMarks,'ts');
+      const mad=_mergeDelMap(cad,answerDeleted),mdi=_mergeDelMap(cdi,delItems),mwv=_mergeObjByKey(cwv,wrongViews,'lastViewed'),mwm=_mergeObjByKey(cwm,wrongMarks,'ts');
       const mar=Math.max(car,answerResetAll||0),mwr=Math.max(cwr,wrongResetAll||0),mwvr=Math.max(cwvr,wrongViewsResetAt||0);
       const meu={...ceu,...examUsed};/* 출제이력 합집합(키=qKey) */
       const mdg=(typeof cdg==='number'&&cdg>0)?cdg:dailyGoal;
@@ -1357,10 +1370,11 @@ async function loadFromFirestore(quiet){
         /* 개수는 같지만 로컬이 더 최신인 경우(같은 문제 재답/수정)도 전파 */
         ||_hasNewerLocal(ca,answerData,'timestamp')||_hasNewerLocal(cv,viewData,'lastViewed')||_hasNewerLocal(cr,repeatMarks,'ts')||_studyLogNewer(csl,msl)
         /* 다시풀기 묘비·전체초기화 시각·조회수(count는 시각과 별개로 커질 수 있음)가 로컬에서 더 최신이면 전파 */
-        ||_hasNewerDel(cad,mad)||mar>car||mwr>cwr||mwvr>cwvr||Object.keys(mwv).length>Object.keys(cwv).length||_hasNewerLocal(cwv,wrongViews,'lastViewed')||_hasNewerCount(cwv,mwv)||_hasNewerCount(cv,mv)
+        ||_hasNewerDel(cad,mad)||_hasNewerDel(cdi,mdi)||mar>car||mwr>cwr||mwvr>cwvr||Object.keys(mwv).length>Object.keys(cwv).length||_hasNewerLocal(cwv,wrongViews,'lastViewed')||_hasNewerCount(cwv,mwv)||_hasNewerCount(cv,mv)
         ||Object.keys(mwm).length>Object.keys(cwm).length||_hasNewerLocal(cwm,wrongMarks,'ts');
-      wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;answerDeleted=mad;wrongViews=mwv;answerResetAll=mar;wrongResetAll=mwr;wrongViewsResetAt=mwvr;wrongMarks=mwm;
+      wrongNotes=mw;memoNotes=mm;viewData=mv;answerData=ma;repeatMarks=mr;mnemonics=mmn;studyLog=msl;examHistory=meh;dailyGoal=mdg;userExpl=mue;examUsed=meu;answerDeleted=mad;delItems=mdi;wrongViews=mwv;answerResetAll=mar;wrongResetAll=mwr;wrongViewsResetAt=mwvr;wrongMarks=mwm;
       _applyAnswerTombstones();/* 머지로 부활한 '다시풀기/초기화' 답 제거 */
+      _applyItemTombstones();/* 머지로 부활한 '삭제한 니모닉·메모·해설·기록' 제거 */
       _saveLocal();/* 머지 결과는 항상 로컬에 영속화 — 순수 pull(다른 기기 기록만 받은 경우)도 저장돼 새로고침 후에도 유지 */
       await _fetchBlobs();/* 다른 기기가 올린 이미지(_img 플래그) 가져와 붙임 */_saveLocal();
       changed=_dataSig()!==sigBefore;/* 실제로 바뀐 게 있는지 */
@@ -1386,6 +1400,8 @@ function _lsSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return 
 function _saveLocal(){
   try{
     let full=false;
+    /* 🪦 삭제 묘비를 항목 배열보다 먼저 저장 — 쿼터 부족 시 '항목은 지워졌는데 묘비만 유실'되어 다음 로드때 부활하는 사고 방지 */
+    full=!_lsSet(PREFIX+'_delitems',JSON.stringify(delItems))||full;
     full=!_lsSet(PREFIX+'_wrong',JSON.stringify(wrongNotes))||full;
     full=!_lsSet(PREFIX+'_views',JSON.stringify(viewData))||full;
     full=!_lsSet(PREFIX+'_answers',JSON.stringify(answerData))||full;
@@ -1440,6 +1456,8 @@ async function saveToFirestore(retryCount){
         wrongViewsResetAt=Math.max(c.jm_wvResetAll||0,wrongViewsResetAt||0);
         answerData=_mergeObjByKey(c.jm_answerData,answerData,'timestamp');
         _applyAnswerTombstones();/* 머지로 부활한 '다시풀기/초기화' 답 제거 */
+        delItems=_mergeDelMap(c.jm_delItems,delItems);
+        _applyItemTombstones();/* 사전읽기 union 머지로 부활한 '삭제 항목' 제거 — 삭제가 클라우드로 확실히 전파되게 함 */
         repeatMarks=_mergeObjByKey(c.jm_repeatMarks,repeatMarks,'ts');
         wrongMarks=_mergeObjByKey(c.jm_wrongMarks,wrongMarks,'ts');
         studyLog=_mergeStudyLog(c.jm_studyLog,studyLog);
@@ -1456,6 +1474,7 @@ async function saveToFirestore(retryCount){
     await ref.set({jm_wrongNotes:wrongNotes,jm_memoNotes:_lightItems(memoNotes),jm_viewData:viewData,jm_answerData:answerData,
       /* 단조(增) 필드는 사전머지 성공 + 비어있지 않을 때만 — 빈 맵은 merge:true에서도 '빈 맵으로 교체'라 클라우드 묘비가 통째로 소거됨 */
       ...(preOk&&Object.keys(answerDeleted).length?{jm_answerDeleted:answerDeleted}:{}),
+      ...(preOk&&Object.keys(delItems).length?{jm_delItems:delItems}:{}),
       ...(preOk&&Object.keys(wrongViews).length?{jm_wrongViews:wrongViews}:{}),
       ...(preOk&&answerResetAll?{jm_answerResetAll:answerResetAll}:{}),
       ...(preOk&&wrongResetAll?{jm_wrongResetAll:wrongResetAll}:{}),
@@ -1482,7 +1501,7 @@ async function maybeResetAll(){
        토큰만 남겨(로컬+클라우드) 재초기화를 영구 차단. 새 기기/스토리지 비운 기기가 폰 기록을 지우는 사고를 막음 */
     const hasData=Object.keys(answerData).length||wrongNotes.length||memoNotes.length||mnemonics.length||userExpl.length||examHistory.length||Object.keys(repeatMarks).length||Object.keys(studyLog).length||Object.keys(viewData).length;
     if(hasData){try{localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);}catch(e){}if(currentUser){try{await saveToFirestore();}catch(e){}}return;}
-    wrongNotes=[];memoNotes=[];viewData={};answerData={};repeatMarks={};mnemonics=[];studyLog={};examHistory=[];userExpl=[];dailyGoal=20;examUsed={};answerDeleted={};wrongViews={};wrongMarks={};answerResetAll=0;wrongResetAll=0;wrongViewsResetAt=0;
+    wrongNotes=[];memoNotes=[];viewData={};answerData={};repeatMarks={};mnemonics=[];studyLog={};examHistory=[];userExpl=[];dailyGoal=20;examUsed={};answerDeleted={};delItems={};wrongViews={};wrongMarks={};answerResetAll=0;wrongResetAll=0;wrongViewsResetAt=0;
     _saveLocal();
     if(currentUser){
       try{await saveToFirestore();localStorage.setItem(PREFIX+'_resetToken',RESET_TOKEN);showSync('synced','🗑️ 전체 기록 초기화 완료');}
@@ -2804,7 +2823,7 @@ const SECTION_DEFS=[
 ]
 const SECTIONS=SECTION_DEFS.map(s=>({...s,questions:QUESTIONS.filter(q=>q.section===s.name)}));
 
-let currentQ=null,currentQIdx=-1,currentSectionIdx=-1,wrongNotes=[],memoNotes=[],viewData={},answerData={},repeatMarks={},answerDeleted={},wrongViews={},wrongMarks={},answerResetAll=0,wrongResetAll=0,wrongViewsResetAt=0,currentMemoTab='wrong',currentMemoFilter='all',appInitialized=false;
+let currentQ=null,currentQIdx=-1,currentSectionIdx=-1,wrongNotes=[],memoNotes=[],viewData={},answerData={},repeatMarks={},answerDeleted={},delItems={},wrongViews={},wrongMarks={},answerResetAll=0,wrongResetAll=0,wrongViewsResetAt=0,currentMemoTab='wrong',currentMemoFilter='all',appInitialized=false;
 let viewMode='welcome',practiceSet=null,currentTopicGenre=null;
 /* ☕ 신규 기능 상태 */
 let mnemonics=[],studyLog={},examHistory=[],dailyGoal=20,pendingMemoImg=null,userExpl=[],pendingExplImg=null,explEditOpen=false,editingExplId=null;
@@ -3196,7 +3215,7 @@ function resetAllViews(){if(!confirm('전체 조회수를 초기화하시겠습�
 function resetOneAnswer(){if(!currentQ)return;const k=getQKey(currentQ);if(!answerData[k])return;answerDeleted[k]={t:Date.now(),a:(answerData[k].timestamp||0)};/* 🪦 정밀 묘비: 이 답(timestamp 이하)만 삭제 — 클라우드 머지 부활 차단 */delete answerData[k];syncToCloud();renderQuiz();buildBookList();updateStats();updateMemoCount();if(document.getElementById('memoPanel').classList.contains('open')&&currentMemoTab==='wrong')renderMemoPanel();}
 function resetAllAnswers(){if(!confirm('모든 풀이 기록을 초기화하시겠습니까?'))return;answerResetAll=Date.now();/* 🪦 전역 초기화 시각 — 아직 안 받아온 다른 기기 키까지 적용 */answerData={};syncToCloud();buildBookList();updateStats();if(viewMode==='grid'&&currentSectionIdx>=0)renderGrid(currentSectionIdx);}
 function addMemoNote(){const q=_explCurQ();const i=document.getElementById('memoNoteInput'),t=i?i.value.trim():'';if((!t&&!pendingMemoImg)||!q)return;const k=getQKey(q);memoNotes.push({id:Date.now(),qKey:k,section:q.section,qNum:q.num,qText:(q.question||'').substring(0,50),text:t,img:pendingMemoImg||null,created:Date.now()});if(i)i.value='';pendingMemoImg=null;syncToCloud();_explRerender();updateMemoCount();renderMemoPanel();}
-function deleteNote(type,id){if(type==='wrong')wrongNotes=wrongNotes.filter(n=>n.id!==id);else memoNotes=memoNotes.filter(n=>n.id!==id);syncToCloud();_explRerender();buildBookList();updateStats();updateMemoCount();renderMemoPanel();}
+function deleteNote(type,id){delItems[(type==='wrong'?'wn:':'memo:')+id]=Date.now();/* 🪦 묘비 */if(type==='wrong')wrongNotes=wrongNotes.filter(n=>n.id!==id);else memoNotes=memoNotes.filter(n=>n.id!==id);syncToCloud();_explRerender();buildBookList();updateStats();updateMemoCount();renderMemoPanel();}
 function _setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 function updateStats(){const wc=Object.values(answerData).filter(a=>!a.correct).length;const cc=Object.values(answerData).filter(a=>a.correct).length;_setTxt('statTotal',QUESTIONS.length);_setTxt('statCorrect',cc);_setTxt('statWrong',wc);_setTxt('statNotes',memoNotes.length);_setTxt('wrongCount',QUESTIONS.filter(q=>isWrongMember(getQKey(q))).length);/* 사이드바 배지 = 오답노트 목록 개수(멤버십) */}
 function updateMemoCount(){document.getElementById('memoCount').textContent=memoNotes.length;updateRepeatCount();}
@@ -3265,7 +3284,6 @@ function switchMemoTab(t){
   const repTab=document.getElementById('memoTabRepeat');if(repTab){repTab.style.display=t==='repeat'?'':'none';repTab.classList.toggle('active',t==='repeat');}
   document.getElementById('memoPanelTitle').innerHTML=t==='wrong'?'❌ 오답노트':(t==='repeat'?'🔁 반복노트':'📝 메모');
   const prev=document.getElementById('memoWrongPreview');if(t!=='wrong')prev.style.display='none';
-  const cb=document.getElementById('clearTabBtn');if(cb)cb.innerHTML=t==='wrong'?'🗑 오답 전체 초기화':(t==='repeat'?'🗑 반복 전체 해제':'🗑 메모 전체 삭제');
   const wb=document.getElementById('wvResetBtn');if(wb)wb.style.display=t==='wrong'?'':'none';
   renderFilterChips();renderMemoPanel();
 }
@@ -3379,11 +3397,6 @@ function exportNotes(){
   if(repQs.length){t+='\n[ 반복노트 ]\n\n';repQs.forEach(q=>{t+='['+q.section+' Q'+q.num+'] '+q.question.substring(0,80)+'\n\n';});}
   if(memoNotes.length){t+='\n[ 메모 ]\n\n';memoNotes.forEach(n=>{t+='['+n.section+' Q'+n.qNum+'] '+n.text+'\n\n';});}
   const b=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='전문의시험_노트.txt';a.click();
-}
-function clearCurrentTab(){
-  if(currentMemoTab==='wrong'){if(!confirm('모든 오답 기록을 초기화하시겠습니까? (정답 기록은 유지됩니다)'))return;wrongResetAll=Date.now();/* 🪦 오답 전용 전역 시각 — 정답은 어떤 기기에서도 안 지움 */Object.keys(answerData).forEach(k=>{if(!answerData[k].correct)delete answerData[k];});syncToCloud();renderMemoPanel();updateMemoCount();updateStats();if(currentQ)renderQuiz();buildBookList();return;}
-  if(currentMemoTab==='repeat'){if(!confirm('모든 반복 표시를 해제하시겠습니까?'))return;repeatMarks={};syncToCloud();renderMemoPanel();updateRepeatCount();if(currentQ)renderQuiz();buildBookList();return;}
-  if(!confirm('현재 탭의 모든 메모를 삭제하시겠습니까?'))return;memoNotes=[];syncToCloud();renderMemoPanel();updateMemoCount();if(currentQ)renderQuiz();
 }
 /* ===== ⏱️ 공부 타이머 — 우측 상단 🕒 버튼, 15/30/45분 프리셋 + 분 단위 조정, 위젯은 헤더를 잡고 드래그 이동(위치 기억) ===== */
 let timerTotalSec=0,timerLeftSec=0,timerEndTs=0,timerInt=null,timerRunning=false,timerDone=false,_timerAC=null;
@@ -3686,7 +3699,7 @@ function addMnem(){
   if(fi)fi.value='';i.value='';syncToCloud();renderQuiz();updateNavMini();
 }
 function toggleMnemFlip(el){if(el)el.classList.toggle('revealed');}
-function deleteMnem(id){mnemonics=mnemonics.filter(n=>n.id!==id);syncToCloud();if(currentQ)renderQuiz();}
+function deleteMnem(id){delItems['mn:'+id]=Date.now();/* 🪦 묘비 — 클라우드 union 머지로 부활 방지 */mnemonics=mnemonics.filter(n=>n.id!==id);syncToCloud();if(currentQ)renderQuiz();}
 
 /* ---------- 내 해설(보충) — 텍스트 + 사진 ---------- */
 /* 편집 대상 문제 / 재렌더 — 퀴즈면 currentQ+renderQuiz, 모의고사 다시보기면 explHostQ+그 화면 재렌더 */
@@ -3710,7 +3723,7 @@ function saveUserExpl(){
   editingExplId=null;pendingExplImg=null;explEditOpen=false;
   syncToCloud();_explRerender();
 }
-function deleteUserExpl(id){if(!confirm('내가 추가한 이 해설을 삭제할까요?'))return;userExpl=userExpl.filter(n=>n.id!==id);if(editingExplId===id){editingExplId=null;explEditOpen=false;}pendingExplImg=null;syncToCloud();_explRerender();}
+function deleteUserExpl(id){if(!confirm('내가 추가한 이 해설을 삭제할까요?'))return;delItems['ue:'+id]=Date.now();/* 🪦 묘비 */userExpl=userExpl.filter(n=>n.id!==id);if(editingExplId===id){editingExplId=null;explEditOpen=false;}pendingExplImg=null;syncToCloud();_explRerender();}
 function handleExplPaste(e){
   const items=(e.clipboardData&&e.clipboardData.items)||[];
   for(let i=0;i<items.length;i++){
@@ -4055,8 +4068,8 @@ function renderExamResult(res){
   c.innerHTML=h;animateDash();
 }
 function examApplyWrong(id){const res=examHistory.find(r=>r.id===id);if(!res)return;if(!confirm('이 모의고사에서 틀린 문제들을 오답노트에 저장할까요? (기존 풀이 기록을 덮어쓸 수 있습니다)'))return;let n=0;res.wrong.forEach(w=>{if(w.sel){const _t=Math.max(Date.now(),(answerResetAll||0)+1,(wrongResetAll||0)+1);answerData[w.qKey]={selected:w.sel,correct:false,timestamp:_t};wrongMarks[w.qKey]={marked:true,ts:_t,sel:w.sel};n++;}});syncToCloud();updateStats();buildBookList();updateMemoCount();renderMemoPanel();updateNavMini();alert(n+'문제를 오답노트에 저장했어요.');}
-function deleteExam(id){if(!confirm('이 모의고사 기록을 삭제할까요?'))return;examHistory=examHistory.filter(r=>r.id!==id);syncToCloud();openExamSetup();}
-function clearExamHistory(){if(!examHistory.length)return;if(!confirm('모든 모의고사 기록을 삭제할까요?'))return;examHistory=[];syncToCloud();openExamSetup();}
+function deleteExam(id){if(!confirm('이 모의고사 기록을 삭제할까요?'))return;if(id!=null)delItems['eh:'+id]=Date.now();/* 🪦 묘비 — 머지 부활 방지(clearExamHistory와 동일) */examHistory=examHistory.filter(r=>r.id!==id);syncToCloud();openExamSetup();}
+function clearExamHistory(){if(!examHistory.length)return;if(!confirm('모든 모의고사 기록을 삭제할까요?'))return;const _t=Date.now();examHistory.forEach(r=>{if(r&&r.id!=null)delItems['eh:'+r.id]=_t;});/* 🪦 묘비 — 머지 부활 방지 */examHistory=[];syncToCloud();openExamSetup();}
 function openExamResult(id){const res=examHistory.find(r=>r.id===id);if(!res)return;_examShow();document.getElementById('headerTitle').textContent='📝 모의고사 결과';renderExamResult(res);document.getElementById('contentArea').scrollTop=0;}
 
 /* ---------- 모의고사 풀이 다시보기 ---------- */
